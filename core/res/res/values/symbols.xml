@@ -297,7 +297,7 @@
   <java-symbol type="bool" name="config_wifi_enable_disconnection_debounce" />
   <java-symbol type="bool" name="config_wifi_revert_country_code_on_cellular_loss" />
   <java-symbol type="bool" name="config_wifi_enable_wifi_firmware_debugging" />
-  <java-symbol type="bool" name="config_wifi_ipreachability_monitor" />
+  <java-symbol type="integer" name="config_wifi_logger_ring_buffer_size_limit_kb" />
   <java-symbol type="integer" name="config_wifi_logger_ring_buffer_default_size_limit_kb" />
   <java-symbol type="integer" name="config_wifi_logger_ring_buffer_verbose_size_limit_kb" />
   <java-symbol type="bool" name="config_wifi_turn_off_during_emergency_call" />
@@ -824,7 +824,6 @@
   <java-symbol type="string" name="reboot_to_update_reboot" />
   <java-symbol type="string" name="reboot_to_reset_title" />
   <java-symbol type="string" name="reboot_to_reset_message" />
-  <java-symbol type="string" name="reboot_confirm" />
   <java-symbol type="string" name="reboot_safemode_confirm" />
   <java-symbol type="string" name="reboot_safemode_title" />
   <java-symbol type="string" name="reboot_title" />
@@ -2104,10 +2103,6 @@
   <java-symbol type="layout" name="year_label_text_view" />
   <java-symbol type="layout" name="date_picker_material" />
 
-  <!-- Config.xml entries -->
-  <java-symbol type="string" name="config_deviceKeyHandlerLib" />
-  <java-symbol type="string" name="config_deviceKeyHandlerClass" />
-
   <java-symbol type="id" name="time_header" />
   <java-symbol type="id" name="hours" />
   <java-symbol type="id" name="minutes" />
@@ -2698,6 +2693,7 @@
   <java-symbol type="bool" name="config_regional_hotspot_show_broadcast_ssid_checkbox" />
   <java-symbol type="bool" name="config_regional_hotspot_show_notification_when_turn_on" />
 
+  <java-symbol type="bool" name="config_video_call_datausage_enable" />
   <java-symbol type="bool" name="config_showOperatorNameInStatusBar" />
   <java-symbol type="bool" name="config_passpoint_setting_on" />
   <java-symbol type="integer" name="wifi_hotspot_security_type" />
@@ -2728,6 +2724,8 @@
   <java-symbol type="string" name="adb_both_active_notification_title" />
   <java-symbol type="string" name="adb_active_generic_notification_message" />
 
+  <java-symbol type="bool" name="config_useDefaultBatchingForAccel" />
+
   <java-symbol type="bool" name="config_useSystemClockforRotationSensor" />
 
   <java-symbol type="string" name="power_key_emergency_number" />
@@ -2735,6 +2733,7 @@
   <java-symbol type="bool" name="config_emergencyCallOnPowerkeyTapGestureEnabled" />
   <java-symbol type="bool" name="config_usb_data_unlock" />
   <java-symbol type="bool" name="config_volte_preferred" />
+  <java-symbol type="bool" name="operator_custom_sim_icon" />
 
   <!-- Last app switch animations -->
   <java-symbol type="anim" name="last_app_in" />

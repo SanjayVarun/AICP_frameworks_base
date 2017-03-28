@@ -33,7 +33,7 @@ public final class PhoneStatusBarTransitions extends BarTransitions {
     private final float mIconAlphaWhenOpaque;
 
     private View mLeftSide, mStatusIcons, mSignalCluster, mBattery, mClock, mNetworkTraffic,
-            mAicpLogoRight, mAicpLogoLeft;
+            mAicpLogoRight, mAicpLogoLeft, mMinitBattery, mWeatherTextView, mWeatherImageView;
 
     private Animator mCurrentAnimation;
 
@@ -53,6 +53,9 @@ public final class PhoneStatusBarTransitions extends BarTransitions {
         mNetworkTraffic = mView.findViewById(R.id.networkTraffic);
         mAicpLogoRight = mView.findViewById(R.id.aicp_logo);
         mAicpLogoLeft = mView.findViewById(R.id.left_aicp_logo);
+        mMinitBattery = mView.findViewById(R.id.minitBattery);
+        mWeatherTextView = mView.findViewById(R.id.weather_temp);
+        mWeatherImageView = mView.findViewById(R.id.weather_image);
         applyModeBackground(-1, getMode(), false /*animate*/);
         applyMode(getMode(), false /*animate*/);
     }
@@ -100,7 +103,10 @@ public final class PhoneStatusBarTransitions extends BarTransitions {
                     animateTransitionTo(mBattery, newAlphaBC),
                     animateTransitionTo(mClock, newAlphaBC),
                     animateTransitionTo(mAicpLogoRight, newAlphaBC),
-                    animateTransitionTo(mAicpLogoLeft, newAlphaBC)
+                    animateTransitionTo(mAicpLogoLeft, newAlphaBC),
+                    animateTransitionTo(mMinitBattery, newAlphaBC),
+                    animateTransitionTo(mWeatherTextView, newAlphaBC),
+                    animateTransitionTo(mWeatherImageView, newAlphaBC)
                     );
             if (isLightsOut(mode)) {
                 anims.setDuration(LIGHTS_OUT_DURATION);
@@ -116,7 +122,9 @@ public final class PhoneStatusBarTransitions extends BarTransitions {
             mClock.setAlpha(newAlphaBC);
             mAicpLogoRight.setAlpha(newAlphaBC);
             mAicpLogoLeft.setAlpha(newAlphaBC);
-
+            mMinitBattery.setAlpha(newAlphaBC);
+            mWeatherTextView.setAlpha(newAlphaBC);
+            mWeatherImageView.setAlpha(newAlphaBC);
         }
     }
 }

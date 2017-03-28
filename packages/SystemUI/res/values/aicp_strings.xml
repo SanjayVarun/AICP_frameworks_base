@@ -19,6 +19,7 @@
 
     <!-- Quick Settings tiles -->
     <string name="quick_settings_screenshot_label">Screenshot</string>
+    <string name="quick_settings_region_screenshot_label">Partial screenshot</string>
     <string name="quick_settings_adb_network">ADB network</string>
     <string name="quick_settings_network_adb_enabled_label">Enabled</string>
     <string name="quick_settings_network_adb_disabled_label">Disabled</string>
@@ -58,6 +59,23 @@
     <string name="accessibility_quick_settings_pulse_on">Pulse on</string>
     <string name="accessibility_quick_settings_pulse_changed_off">Pulse turned off</string>
     <string name="accessibility_quick_settings_pulse_changed_on">Pulse turned on</string>
+    <string name="quick_settings_locale_label">Language</string>
+    <string name="quick_settings_locale_more_locales_toast">Please configure multiple languages to enable toggle functionality</string>
+    <string name="quick_settings_sound_label">Sound</string>
+    <string name="quick_settings_sound_ring">Ring</string>
+    <string name="quick_settings_sound_vibrate">Vibrate</string>
+    <string name="quick_settings_sound_silent">Silent</string>
+    <string name="accessibility_quick_settings_location_battery_saving">Location reporting: battery saving mode.</string>
+    <string name="accessibility_quick_settings_location_gps_only">Location reporting: sensors only mode.</string>
+    <string name="accessibility_quick_settings_location_high_accuracy">Location reporting: high accuracy mode.</string>
+    <string name="accessibility_quick_settings_location_changed_battery_saving">Location reporting changed to battery saving mode.</string>
+    <string name="accessibility_quick_settings_location_changed_gps_only">Location reporting changed to sensors only mode.</string>
+    <string name="accessibility_quick_settings_location_changed_high_accuracy">Location reporting changed to high accuracy mode.</string>
+    <string name="quick_settings_location_detail_title">Location mode</string>
+    <string name="quick_settings_location_battery_saving_label">Battery saving</string>
+    <string name="quick_settings_location_gps_only_label">Device only</string>
+    <string name="quick_settings_location_high_accuracy_label">High accuracy</string>
+    <string name="quick_settings_location_off_label">Location off</string>
 
     <!-- Screenshot Delete Toast -->
     <string name="delete_screenshot_toast">Screenshot Deleted</string>
@@ -77,4 +95,152 @@
     <string name="screenshot_abort_title">No screenshot taken</string>
     <string name="screenshot_abort_text">Operation aborted</string>
 
+    <!-- Aicp Extras Tile -->
+    <string name="quick_aicp_extras_label">Aicp Extras</string>
+    <string name="quick_aicp_extras_toast">LOL, you really thought that long click will take you somewhere!!!</string>
+
+    <!-- App sidebar -->
+    <string name="default_folder_text">Folder</string>
+    <string name="title_activity_sidebar_configuration">Appbar content setup</string>
+    <string name="action_save">Save</string>
+    <string name="toast_items_saved">Appbar items have been saved.</string>
+    <string name="content_setup_instructions">Add items to the Appbar by long pressing any item on the right and drag it over to the Appbar.\n\nCombine items into folders by droping an item onto any existing item in the Appbar.\n\nTo remove an item simply drag it out of the \@appbar.</string>
+    <string name="content_setup_dismiss">Continue</string>
+    <string name="toast_not_installed">App is not installed</string>
+
+    <!-- PA Pie controls -->
+    <string name="pie_date_format" translatable="false">ccc, dd MMM yyyy</string>
+    <string name="pie_hour_format_12">hh:mm</string>
+    <string name="pie_hour_format_24">HH:mm</string>
+    <string name="pie_am_pm">a</string>
+
+    <!-- PA Pie Tile -->
+    <string name="quick_settings_pie">Pie</string>
+    <string name="quick_settings_pie_off">Pie off</string>
+    <string name="quick_settings_pie_on">Pie on</string>
+
+    <!-- Kill app toast -->
+    <string name="app_killed_message">App Killed</string>
+
+    <!-- Ambient Display Tile -->
+    <string name="quick_settings_ambient_display_label">Ambient display</string>
+    <!-- Content description of the ambient display tile in quick settings when off (not shown on the screen). [CHAR LIMIT=NONE] -->
+    <string name="accessibility_quick_settings_ambient_display_off">Ambient display off.</string>
+    <!-- Content description of the ambient display tile in quick settings when on (not shown on the screen). [CHAR LIMIT=NONE] -->
+    <string name="accessibility_quick_settings_ambient_display_on">Ambient display on.</string>
+    <!-- Announcement made when ambient display changes to off (not shown on the screen). [CHAR LIMIT=NONE] -->
+    <string name="accessibility_quick_settings_ambient_display_changed_off">Ambient display turned off.</string>
+    <!-- Announcement made when ambient display changes to on (not shown on the screen). [CHAR LIMIT=NONE] -->
+    <string name="accessibility_quick_settings_ambient_display_changed_on">Ambient display turned on.</string>
+
+    <!-- Path data for Solid battery -->
+    <string name="battery_solid_full" translatable="false">M 12 2 C 17.5228474983 2 22 6.47715250169 22 12 C 22 17.5228474983 17.5228474983 22 12 22 C 6.47715250169 22 2 17.5228474983 2 12 C 2 6.47715250169 6.47715250169 2 12 2 Z</string>
+    <string name="battery_solid_empty" translatable="false">M 12 12 C 12 12 12 12 12 12 C 12 12 12 12 12 12 C 12 12 12 12 12 12 C 12 12 12 12 12 12 Z</string>
+
+    <!-- Application picker Tile -->
+    <string name="quick_settings_app_picker">Application picker</string>
+
+    <!-- accessibility label for button to open running apps prefscreen [CHAR LIMIT=NONE] -->
+    <string name="accessibility_quick_settings_running_services">Open Running Services screen.</string>
+
+    <!-- Path data for Aicp battery -->
+    <string name="battery_aicp_clip_path" translatable="false">M 18.92 7.51 C 21.23 7.97 23.42 8.90 25.74 9.25 C 29.20 8.69 32.46 7.10 36.01 7.04 C 39.90 6.85 43.48 8.63 47.24 9.24 C 49.46 8.78 51.57 7.88 53.83 7.61 C 53.27 9.36 52.47 11.05 52.14 12.87 C 53.68 16.48 56.75 19.39 57.47 23.37 C 58.42 28.86 57.88 34.46 57.96 40.00 C 57.81 46.33 58.32 52.67 57.84 58.98 C 57.79 61.78 55.73 64.44 52.86 64.70 C 47.60 65.39 42.28 64.87 37.00 64.96 C 31.38 64.84 25.73 65.40 20.14 64.72 C 17.63 64.48 15.41 62.44 15.24 59.88 C 14.65 54.60 15.13 49.29 15.05 44.00 C 15.16 37.69 14.68 31.35 15.25 25.05 C 15.63 20.39 18.78 16.70 21.20 12.92 C 20.39 11.14 19.63 9.34 18.92 7.51 M 23.73 19.07 C 24.77 20.54 25.85 21.97 26.96 23.37 C 27.83 22.31 28.67 21.24 29.51 20.16 C 27.59 19.74 25.67 19.38 23.73 19.07 M 42.91 20.14 C 42.95 20.82 43.05 22.19 43.09 22.87 C 43.71 22.78 44.95 22.59 45.57 22.50 C 46.39 21.24 47.20 19.98 48.01 18.71 C 46.30 19.18 44.60 19.65 42.91 20.14 Z</string>
+    <string name="battery_aicp_path_empty" translatable="false">M 18.92 7.51 C 21.23 7.97 23.42 8.90 25.74 9.25 C 29.20 8.69 32.46 7.10 36.01 7.04 C 39.90 6.85 43.48 8.63 47.24 9.24 C 49.46 8.78 51.57 7.88 53.83 7.61 C 53.27 9.36 52.47 11.05 52.14 12.87 C 53.68 16.48 56.75 19.39 57.47 23.37 C 58.42 28.86 57.88 34.46 57.96 40.00 C 57.81 46.33 58.32 52.67 57.84 58.98 C 57.79 61.78 55.73 64.44 52.86 64.70 C 47.60 65.39 42.28 64.87 37.00 64.96 C 31.38 64.84 25.73 65.40 20.14 64.72 C 17.63 64.48 15.41 62.44 15.24 59.88 C 14.65 54.60 15.13 49.29 15.05 44.00 C 15.16 37.69 14.68 31.35 15.25 25.05 C 15.63 20.39 18.78 16.70 21.20 12.92 C 20.39 11.14 19.63 9.34 18.92 7.51 M 23.73 19.07 C 24.77 20.54 25.85 21.97 26.96 23.37 C 27.83 22.31 28.67 21.24 29.51 20.16 C 27.59 19.74 25.67 19.38 23.73 19.07 M 42.91 20.14 C 42.95 20.82 43.05 22.19 43.09 22.87 C 43.71 22.78 44.95 22.59 45.57 22.50 C 46.39 21.24 47.20 19.98 48.01 18.71 C 46.30 19.18 44.60 19.65 42.91 20.14 Z</string>
+    <string name="battery_aicp_path_frame" translatable="false">M 18.92 7.51 C 21.23 7.97 23.42 8.90 25.74 9.25 C 29.20 8.69 32.46 7.10 36.01 7.04 C 39.90 6.85 43.48 8.63 47.24 9.24 C 49.46 8.78 51.57 7.88 53.83 7.61 C 53.27 9.36 52.47 11.05 52.14 12.87 C 53.68 16.48 56.75 19.39 57.47 23.37 C 58.42 28.86 57.88 34.46 57.96 40.00 C 57.81 46.33 58.32 52.67 57.84 58.98 C 57.79 61.78 55.73 64.44 52.86 64.70 C 47.60 65.39 42.28 64.87 37.00 64.96 C 31.38 64.84 25.73 65.40 20.14 64.72 C 17.63 64.48 15.41 62.44 15.24 59.88 C 14.65 54.60 15.13 49.29 15.05 44.00 C 15.16 37.69 14.68 31.35 15.25 25.05 C 15.63 20.39 18.78 16.70 21.20 12.92 C 20.39 11.14 19.63 9.34 18.92 7.51 M 23.73 19.07 C 24.77 20.54 25.85 21.97 26.96 23.37 C 27.83 22.31 28.67 21.24 29.51 20.16 C 27.59 19.74 25.67 19.38 23.73 19.07 M 42.91 20.14 C 42.95 20.82 43.05 22.19 43.09 22.87 C 43.71 22.78 44.95 22.59 45.57 22.50 C 46.39 21.24 47.20 19.98 48.01 18.71 C 46.30 19.18 44.60 19.65 42.91 20.14 Z</string>
+
+    <!-- On The Go -->
+    <string name="onthego_notif_ticker">On-The-Go activated</string>
+    <string name="onthego_notif_title">On-The-Go is active</string>
+    <string name="onthego_notif_stop">Stop</string>
+    <string name="onthego_notif_options">Options</string>
+    <string name="onthego_notif_error">Unable to start On-The-Go</string>
+    <string name="onthego_notif_restart">Restart On-The-Go</string>
+    <string name="onthego_notif_camera_changed">Camera mode changed</string>
+    <string name="onthego_transparency">Transparency</string>
+    <string name="onthego_front_camera">Use front camera</string>
+    <string name="onthego_service_toggle">Automatically restart service</string>
+    <!-- To do: Add QS OnTheGo
+    <string name="quick_settings_onthego_back">Rear Camera</string>
+    <string name="quick_settings_onthego_front">Front Camera</string>-->
+
+    <!-- Slim Recents -->
+    <string name="recents_multiwin_warning">A multiwindow session is already active.\nJust tap an app if you want to dock it now.</string>
+    <string name="recents_multiwin_nolastapp">You removed all recents, please choose an app from launcher or drawer.</string>
+    <string name="slim_recent_keyguard">Unlock your device to view recents</string>
+    <string name="slim_recent_pinned">Unpin the screen to view recents</string>
+
+    <!-- Slim recents app sidebar queue app toast -->
+    <string name="toast_recents_queue_app">Launch %s after closing recents</string>
+    <string name="toast_recents_cancel_queued_app">Cancelled app launch</string>
+
+    <!-- Kill button in notification guts -->
+    <string name="force_stop_dlg_title">Force stop?</string>
+    <string name="force_stop_dlg_text">If you force stop an app, it may misbehave.</string>
+    <string name="dlg_ok">OK</string>
+    <string name="dlg_cancel">Cancel</string>
+    <string name="kill">Kill App</string>
+
+    <!-- App circle sidebar -->
+    <string name="app_float_maximize_item_title">Maximize</string>
+    <string name="app_float_item_title">Float view</string>
+    <string name="app_stop_item_title">Kill app</string>
+
+    <!-- Slim recents membar -->
+    <string name="recents_free_ram">RAM: %1$d MB free</string>
+
+    <!-- OmniJAWS -->
+    <string name="omnijaws_service_error">Error</string>
+    <string name="omnijaws_service_unkown">No weather data</string>
+    <string name="omnijaws_detail_header">Weather</string>
+    <string name="omnijaws_label_default">Weather</string>
+    <string name="omnijaws_current_text">Now</string>
+    <string name="omnijaws_package_not_available">OmniJaws not available</string>
+
+    <!-- Weather string format in expanded statusbar header -->
+    <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g></string>
+
+    <!-- Off/On/Toggle -->
+    <string name="off">Off</string>
+    <string name="on">On</string>
+    <string name="toggle">Toggle</string>
+
+    <!-- Dialog Cancel/OK -->
+    <string name="cancel">Cancel</string>
+    <string name="dlg_ok">Ok</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <!-- Slim Shortcut Actions -->
+    <string name="shortcut_picker">Aicp Shortcuts</string>
+    <string name="shortcut_rotation">Rotation</string>
+    <string name="shortcut_reboot">Reboot</string>
+    <string name="shortcut_recovery">Recovery</string>
+    <string name="shortcut_screensleep">Sleep screen</string>
+    <string name="shortcut_volume">Volume panel</string>
+    <string name="shortcut_restart_ui">Restart SystemUI</string>
+    <string name="shortcut_powermenu">Power menu</string>
+    <string name="shortcut_flashlight">Flashlight</string>
+    <string name="shortcut_clear_notifications">Clear notifications</string>
+    <string name="shortcut_toggle_title">Action to perform</string>
+
+    <!-- MagiskManager QS Tile -->
+    <string name="quick_magiskmanager_label">Magisk</string>
+    <string name="quick_magiskmanager_na">Magisk Manager is not installed! Install first.</string>
+
+    <!-- Compass QS Tile -->
+    <string name="quick_settings_compass_label">Compass</string>
+    <string name="quick_settings_compass_value"><xliff:g id="degrees">%1$.0f</xliff:g>\u00b0 <xliff:g id="direction">%2$s</xliff:g></string>
+    <string name="quick_settings_compass_init">Initializing\u2026</string>
+    <string name="accessibility_quick_settings_compass_off">Compass off.</string>
+    <string name="accessibility_quick_settings_compass_on">Compass on.</string>
+    <string name="accessibility_quick_settings_compass_changed_off">Compass turned off.</string>
+    <string name="accessibility_quick_settings_compass_changed_on">Compass turned on.</string>
+    <string name="quick_settings_compass_N">N</string>
+    <string name="quick_settings_compass_NE">NE</string>
+    <string name="quick_settings_compass_E">E</string>
+    <string name="quick_settings_compass_SE">SE</string>
+    <string name="quick_settings_compass_S">S</string>
+    <string name="quick_settings_compass_SW">SW</string>
+    <string name="quick_settings_compass_W">W</string>
+    <string name="quick_settings_compass_NW">NW</string>
 </resources>

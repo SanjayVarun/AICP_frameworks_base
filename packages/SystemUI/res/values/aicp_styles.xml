@@ -31,4 +31,65 @@
         <item name="android:textSize">14dp</item>
     </style>
 
+    <!-- App side bar -->
+    <style name="AppSidebarItemText" >
+        <item name="android:textColor">@color/sidebar_item_text_color</item>
+        <item name="android:textSize">@dimen/item_title_text_size</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center</item>
+        <item name="android:shadowColor">@color/sidebar_item_text_shadow_color</item>
+        <item name="android:shadowRadius">1.0</item>
+        <item name="android:shadowDx">2.0</item>
+        <item name="android:shadowDy">2.0</item>
+    </style>
+
+    <style name="BatteryMeterViewDrawable.Solid"/>
+    <style name="BatteryMeterViewDrawable.Aicp"/>
+
+    <style name="AppPicker" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+    <!-- Switch bar text appearance -->
+    <style name="TextAppearance.SwitchBar" parent="@android:style/TextAppearance.Material.Title">
+        <item name="android:textColor">?android:attr/textColorPrimaryInverse</item>
+    </style>
+
+    <!-- Slim recents -->
+    <style name="card_header_favorite_icon">
+        <item name="android:layout_width">@dimen/recent_favorite_icon_size</item>
+        <item name="android:layout_height">@dimen/recent_favorite_icon_size</item>
+        <item name="android:layout_marginStart">-16dp</item>
+        <item name="android:layout_marginTop">2dp</item>
+    </style>
+
+    <style name="ListTheme" parent="@*android:style/Theme.Holo">
+        <item name="android:windowBackground">@*android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:listSelector">@*android:color/transparent</item>
+        <item name="android:scrollbars">none</item>
+        <item name="android:clipChildren">false</item>
+        <item name="android:overScrollMode">never</item>
+        <item name="android:divider">@null</item>
+    </style>
+
+   <style name="TextAppearance.StatusBar.Expanded.Weather">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
+    <style name="TextAppearance.StatusBar.Expanded.Weather.Detailed">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
 </resources>

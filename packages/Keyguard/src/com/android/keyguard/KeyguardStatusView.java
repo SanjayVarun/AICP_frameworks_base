@@ -18,6 +18,7 @@ package com.android.keyguard;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -164,6 +165,8 @@ public class KeyguardStatusView extends GridLayout {
 
         refreshTime();
         refreshAlarmStatus(nextAlarm);
+        lockscreenColors();
+        hideLockscreenItems();
     }
 
     void refreshAlarmStatus(AlarmManager.AlarmClockInfo nextAlarm) {
@@ -204,6 +207,8 @@ public class KeyguardStatusView extends GridLayout {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         KeyguardUpdateMonitor.getInstance(mContext).registerCallback(mInfoCallback);
+        lockscreenColors();
+        hideLockscreenItems();
     }
 
     @Override
@@ -232,6 +237,57 @@ public class KeyguardStatusView extends GridLayout {
     @Override
     public boolean hasOverlappingRendering() {
         return false;
+    }
+
+    // LockscreenColors
+    private void lockscreenColors() {
+        final ContentResolver resolver = getContext().getContentResolver();
+        int clockColor = Settings.System.getInt(resolver,
+                Settings.System.LOCKSCREEN_CLOCK_COLOR, 0xFFFFFFFF);
+        int clockDateColor = Settings.System.getInt(resolver,
+                Settings.System.LOCKSCREEN_CLOCK_DATE_COLOR, 0xFFFFFFFF);
+        int ownerInfoColor = Settings.System.getInt(resolver,
+                Settings.System.LOCKSCREEN_OWNER_INFO_COLOR, 0xFFFFFFFF);
+        int alarmColor = Settings.System.getInt(resolver,
+                Settings.System.LOCKSCREEN_ALARM_COLOR, 0xFFFFFFFF);
+        if (mClockView != null) {
+            mClockView.setTextColor(clockColor);
+        }
+
+        if (mDateView != null) {
+            mDateView.setTextColor(clockDateColor);
+        }
+
+        if (mOwnerInfo != null) {
+            mOwnerInfo.setTextColor(ownerInfoColor);
+        }
+
+        if (mAlarmStatusView != null) {
+            mAlarmStatusView.setTextColor(alarmColor);
+        }
+    }
+
+    // Hide LockscreenItems
+    public void hideLockscreenItems() {
+        final ContentResolver resolver = getContext().getContentResolver();
+        final Resources res = getContext().getResources();
+        AlarmManager.AlarmClockInfo nextAlarm =
+                mAlarmManager.getNextAlarmClock(UserHandle.USER_CURRENT);
+        boolean showAlarm = Settings.System.getInt(resolver,
+                Settings.System.HIDE_LOCKSCREEN_ALARM, 1) == 1;
+        boolean showClock = Settings.System.getInt(resolver,
+                Settings.System.HIDE_LOCKSCREEN_CLOCK, 1) == 1;
+        boolean showDate = Settings.System.getInt(resolver,
+                Settings.System.HIDE_LOCKSCREEN_DATE, 1) == 1;
+
+        mClockView = (TextClock) findViewById(R.id.clock_view);
+        mClockView.setVisibility(showClock ? View.VISIBLE : View.GONE);
+
+        mDateView = (TextClock) findViewById(R.id.date_view);
+        mDateView.setVisibility(showDate ? View.VISIBLE : View.GONE);
+
+        mAlarmStatusView = (TextView) findViewById(R.id.alarm_status);
+        mAlarmStatusView.setVisibility(showAlarm && nextAlarm != null ? View.VISIBLE : View.GONE);
     }
 
     // DateFormat.getBestDateTimePattern is extremely expensive, and refresh is called often.

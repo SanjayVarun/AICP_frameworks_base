@@ -249,8 +249,13 @@ public class VolumeDialog implements TunerService.Tunable {
                 });
 
         if (mRows.isEmpty()) {
-            addRow(AudioManager.STREAM_RING,
-                    R.drawable.ic_volume_ringer, R.drawable.ic_volume_ringer_mute, true);
+            if (Util.isVoiceCapable(mContext)) {
+                addRow(AudioManager.STREAM_RING,
+                        R.drawable.ic_volume_ringer, R.drawable.ic_volume_ringer_mute, true);
+            } else {
+                addRow(AudioManager.STREAM_RING, R.drawable.ic_volume_notification,
+                        R.drawable.ic_volume_notification_mute, true);
+            }
             addRow(AudioManager.STREAM_MUSIC,
                     R.drawable.ic_volume_media, R.drawable.ic_volume_media_mute, true);
             addRow(AudioManager.STREAM_ALARM,
@@ -492,9 +497,11 @@ public class VolumeDialog implements TunerService.Tunable {
         if (mAccessibility.mFeedbackEnabled) return 20000;
         if (mHovering) return 16000;
         if (mSafetyWarning != null) return 5000;
-        if (mExpanded || mExpandButtonAnimationRunning) return 5000;
-        if (mActiveStream == AudioManager.STREAM_MUSIC) return 1500;
-        return 3000;
+        int mVolumeDialogTimeout = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.VOLUME_DIALOG_TIMEOUT, 3000);
+        if (mExpanded || mExpandButtonAnimationRunning) return mVolumeDialogTimeout;
+        if (mActiveStream == AudioManager.STREAM_MUSIC) return mVolumeDialogTimeout;
+        return mVolumeDialogTimeout;
     }
 
     protected void dismissH(int reason) {
@@ -675,7 +682,7 @@ public class VolumeDialog implements TunerService.Tunable {
 
     private void removeRow(VolumeRow volumeRow) {
         mRows.remove(volumeRow);
-        mDialogContentView.removeView(volumeRow.view);
+        mDialogRowsView.removeView(volumeRow.view);
     }
 
     private void onStateChangedH(State state) {
@@ -698,7 +705,9 @@ public class VolumeDialog implements TunerService.Tunable {
             }
         }
 
-        updateNotificationRowH();
+        if (Util.isVoiceCapable(mContext)) {
+            updateNotificationRowH();
+        }
 
         if (mActiveStream != state.activeStream) {
             mActiveStream = state.activeStream;
@@ -860,8 +869,7 @@ public class VolumeDialog implements TunerService.Tunable {
     }
 
     private void updateVolumeRowHeaderVisibleH(VolumeRow row) {
-        final boolean dynamic = row.ss != null && row.ss.dynamic;
-        final boolean showHeaders = mExpanded && (mShowHeaders || dynamic);
+        final boolean showHeaders = mExpanded && mShowHeaders;
         if (row.cachedShowHeaders != showHeaders) {
             row.cachedShowHeaders = showHeaders;
             Util.setVisOrGone(row.header, showHeaders);

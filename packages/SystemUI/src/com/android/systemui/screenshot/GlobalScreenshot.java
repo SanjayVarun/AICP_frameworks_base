@@ -41,6 +41,8 @@ import android.graphics.PixelFormat;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.media.MediaActionSound;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -283,6 +285,18 @@ class SaveImageInBackgroundTask extends AsyncTask<Void, Void, Void> {
                     r.getString(com.android.internal.R.string.share), shareAction);
             mNotificationBuilder.addAction(shareActionBuilder.build());
 
+            // Create an edit action for the notification
+            final Intent editScreenshootIntent = new Intent(Intent.ACTION_SEND);
+            editScreenshootIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    | Intent.FLAG_ACTIVITY_NEW_TASK);
+            editScreenshootIntent.setType("image/png");
+            editScreenshootIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            editScreenshootIntent.setPackage("com.srbodroid.aicpmemo");
+            final PendingIntent editAction = PendingIntent.getActivity(context,  0, editScreenshootIntent,
+                    PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+            mNotificationBuilder.addAction(R.drawable.ic_screenshoot_edit,
+                    r.getString(com.android.internal.R.string.edit), editAction);
+
             // Create a delete action for the notification
             PendingIntent deleteAction = PendingIntent.getBroadcast(context,  0,
                     new Intent(context, GlobalScreenshot.DeleteScreenshotReceiver.class)
@@ -292,26 +306,6 @@ class SaveImageInBackgroundTask extends AsyncTask<Void, Void, Void> {
                     R.drawable.ic_screenshot_delete,
                     r.getString(com.android.internal.R.string.delete), deleteAction);
             mNotificationBuilder.addAction(deleteActionBuilder.build());
-
-            // Create an edit action for the notification
-            Intent editScreenshootIntent = new Intent(Intent.ACTION_SEND);
-            editScreenshootIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    | Intent.FLAG_ACTIVITY_NEW_TASK);
-            editScreenshootIntent.setType("image/png");
-            editScreenshootIntent.putExtra(Intent.EXTRA_STREAM, uri);
-            editScreenshootIntent.setPackage("com.srbodroid.aicpmemo");
-            PendingIntent chooseEditAction = PendingIntent.getBroadcast(context, 0,
-                    new Intent(context, GlobalScreenshot.TargetChosenReceiver.class),
-                    PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-            Intent chooserEditIntent = Intent.createChooser(editScreenshootIntent, null,
-                    chooseEditAction.getIntentSender())
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-            PendingIntent editAction = PendingIntent.getActivity(context, 0, chooserEditIntent,
-                    PendingIntent.FLAG_CANCEL_CURRENT);
-            Notification.Action.Builder editActionBuilder = new Notification.Action.Builder(
-                    R.drawable.ic_screenshoot_edit,
-                    r.getString(com.android.internal.R.string.edit), editAction);
-            mNotificationBuilder.addAction(editActionBuilder.build());
 
             mParams.imageUri = uri;
             mParams.image = null;
@@ -457,7 +451,7 @@ class GlobalScreenshot {
 
     private AsyncTask<Void, Void, Void> mSaveInBgTask;
 
-    private MediaActionSound mCameraSound;
+    private Ringtone  mScreenshotSound;
 
     private final int mSfHwRotation;
 
@@ -527,12 +521,12 @@ class GlobalScreenshot {
         mPreviewWidth = panelWidth;
         mPreviewHeight = r.getDimensionPixelSize(R.dimen.notification_max_height);
 
-        // Setup the Camera shutter sound
-        mCameraSound = new MediaActionSound();
-        mCameraSound.load(MediaActionSound.SHUTTER_CLICK);
-
         // Load hardware rotation from prop
         mSfHwRotation = android.os.SystemProperties.getInt("ro.sf.hwrotation",0) / 90;
+
+        // Setup the Screenshot sound
+        mScreenshotSound= RingtoneManager.getRingtone(mContext,
+                    Uri.parse("file://" + "/system/media/audio/ui/camera_click.ogg"));
     }
 
     /**
@@ -659,7 +653,7 @@ class GlobalScreenshot {
                         mWindowManager.removeView(mScreenshotLayout);
                         final Rect rect = view.getSelectionRect();
                         if (rect != null) {
-                            if (rect.width() != 0 && rect.height() != 0) {
+                            if (rect.left > 0 && rect.top > 0 && rect.width() != 0 && rect.height() != 0) {
                                 // Need mScreenshotLayout to handle it after the view disappears
                                 mScreenshotLayout.post(new Runnable() {
                                     public void run() {
@@ -736,9 +730,10 @@ class GlobalScreenshot {
             @Override
             public void run() {
                 // Play the shutter sound to notify that we've taken a screenshot
-                if (Settings.System.getInt(mContext.getContentResolver(),
-                        Settings.System.SCREENSHOT_SOUND, 1) == 1) {
-                    mCameraSound.play(MediaActionSound.SHUTTER_CLICK);
+                if (Settings.System.getInt(mContext.getContentResolver(), Settings.System.SCREENSHOT_SOUND, 1) == 1) {
+                    if (mScreenshotSound != null) {
+                        mScreenshotSound.play();
+                    }
                 }
 
                 mScreenshotView.setLayerType(View.LAYER_TYPE_HARDWARE, null);

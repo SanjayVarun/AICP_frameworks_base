@@ -765,6 +765,9 @@ public class PackageManagerService extends IPackageManager.Stub {
 
     private UserManagerInternal mUserManagerInternal;
 
+    private static final ComponentName FALLBACK_HOME_COMPONENT = new ComponentName(
+            "com.android.settings", "com.android.settings.FallbackHome");
+
     private static class IFVerificationParams {
         PackageParser.Package pkg;
         boolean replacing;
@@ -1851,8 +1854,18 @@ public class PackageManagerService extends IPackageManager.Stub {
         @Override
         public void onVolumeStateChanged(VolumeInfo vol, int oldState, int newState) {
             if (vol.type == VolumeInfo.TYPE_PRIVATE) {
-                if (vol.state == VolumeInfo.STATE_MOUNTED) {
-                    final String volumeUuid = vol.getFsUuid();
+                final String volumeUuid = vol.getFsUuid();
+                boolean volCurStateMounted = false;
+                // To handle a case where the onVolumeStateChanged callback is called with
+                // volume state MOUNTED, but the current state of volume is changed to
+                // UNMOUNTED/EJECTED state due to asynchronous behaviour of vold.
+                if(volumeUuid != null) {
+                    StorageManager storage = mContext.getSystemService(StorageManager.class);
+                    VolumeInfo currentVol = storage.findVolumeByUuid(volumeUuid);
+                    if(currentVol != null && currentVol.state == VolumeInfo.STATE_MOUNTED)
+                        volCurStateMounted = true;
+                }
+                if (vol.state == VolumeInfo.STATE_MOUNTED && volCurStateMounted) {
 
                     // Clean up any users or apps that were removed or recreated
                     // while this volume was missing
@@ -4562,7 +4575,9 @@ public class PackageManagerService extends IPackageManager.Stub {
                 if (actionName.startsWith("android.net.netmon.lingerExpired")
                         || actionName.startsWith("com.android.server.sip.SipWakeupTimer")
                         || actionName.startsWith("com.android.internal.telephony.data-reconnect")
-                        || actionName.startsWith("android.net.netmon.launchCaptivePortalApp")) {
+                        || actionName.startsWith("android.net.netmon.launchCaptivePortalApp")
+                        || actionName.startsWith("intent_navbar_edit")
+                        || actionName.startsWith("org.omnirom.omniswitch")) {
                     return true;
                 }
             }
@@ -20842,6 +20857,13 @@ Slog.v(TAG, ":: stepped forward, applying functor at tag " + parser.getName());
                         CMSettings.Secure.PROTECTED_COMPONENT_MANAGERS, "|");
         if (protectedComponentManagers.contains(callingPackage)) {
             if (DEBUG_PROTECTED) Log.d(TAG, "Calling package is a protected manager, allow");
+            return false;
+        }
+
+        // FallbackHome is started on boot. If we block it, we will never finish booting
+        if (callingUid == Process.ROOT_UID && FALLBACK_HOME_COMPONENT.equals(componentName)) {
+            if (DEBUG_PROTECTED) Log.d(TAG, "Letting callinguid " + Process.ROOT_UID +
+                    " start " + componentName.flattenToShortString());
             return false;
         }
 

@@ -25,8 +25,6 @@
   <string name="permgrouplab_security">보안</string>
   <!-- Description of a category of application permissions, listed so the user can choose whether they want to allow the application to do this. -->
   <string name="permgroupdesc_security">장치의 보안 정보에 관련된 권한입니다.</string>
-  <!-- label for item that opens the profile choosing dialog -->
-  <string name="global_action_choose_profile">프로필</string>
   <!-- label for item that restarts the phone in phone options dialog -->
   <!-- label for current user in phone options dialog -->
   <string name="global_action_current_user">현재</string>
@@ -43,7 +41,9 @@
   <!-- Title of dialog to confirm restarting. -->
   <!-- Restart Confirmation Dialog.  When the user chooses to restart the device, there will
          be a confirmation dialog.  This is the message. -->
+  <string name="reboot_confirm" product="tablet">태블릿이 다시 시작됩니다.</string>
   <!-- Restart Progress Dialog. This is shown if the user chooses to restart the phone. -->
+  <string name="reboot_progress">다시 시작하는 중\u2026</string>
   <!-- ADB over network notification -->
   <string name="adb_net_active_notification_title">네트워크 ADB 활성화됨</string>
   <!-- ADB over USB and network notification -->
@@ -113,6 +113,7 @@
   <string name="app_ops_use_fingerprint">지문인식 사용</string>
   <string name="app_ops_add_voicemail">음성 메일 추가</string>
   <string name="app_ops_read_phone_state">전화 상태에 접근</string>
+  <string name="app_ops_scan_wifi">Wi-Fi 네트워크 스캔</string>
   <string name="app_ops_change_wallpaper">배경 화면을 변경</string>
   <string name="app_ops_assist_structure">어시스트 구조 사용</string>
   <string name="app_ops_assist_screenshot">현재 화면을 캡쳐</string>
@@ -123,6 +124,7 @@
   <string name="app_ops_write_external_storage">외부 저장소에 쓰기</string>
   <string name="app_ops_turn_on_screen">화면을 켬</string>
   <string name="app_ops_get_accounts">기기 계정 읽기</string>
+  <string name="app_ops_run_in_background">백그라운드에서 실행</string>
   <string name="app_ops_wifi_change">Wi-Fi 상태 변경</string>
   <string name="app_ops_su">루트 권한 얻기</string>
   <!-- Protected Apps Notification -->
@@ -130,4 +132,8 @@
   <string name="notify_package_component_protected_text"><xliff:g id="app_name">%1$s</xliff:g>은(는) 실행이 제한되어 있습니다. 탭하여 제한을 해제하고 애플리케이션을 실행하세요.</string>
   <!-- Notify user that they are in Lock-to-app (for devices without navbar) -->
   <string name="lock_to_app_toast_no_navbar">화면 고정을 해제하려면 뒤로 버튼을 계속 누르세요</string>
+  <!-- Message to show the user when their vendor image doesn't match the build's fingerprint. -->
+  <string name="lineage_system_error_manufacturer">공급 업체 이미지 불일치가 감지되었습니다. 일반적으로 이것은 당신의 공급 업체 이미지가 오래되었다는 것을 의미합니다. 공급 업체 이미지가 <xliff:g id="fingerprint">%1$s</xliff:g>과 일치하는지 확인하십시오.</string>
+  <!-- Single hand mode -->
+  <string name="singlehandmode_click_hint_message">화면 바깥을 누르면 한 손 모드를 종료합니다</string>
 </resources>

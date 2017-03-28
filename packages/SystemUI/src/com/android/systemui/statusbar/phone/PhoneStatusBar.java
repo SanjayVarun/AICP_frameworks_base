@@ -38,6 +38,7 @@ import android.app.ActivityManagerNative;
 import android.app.ActivityOptions;
 import android.app.IActivityManager;
 import android.app.Notification;
+import android.hardware.display.DisplayManager;
 import android.app.PendingIntent;
 import android.app.StatusBarManager;
 import android.content.BroadcastReceiver;
@@ -56,6 +57,7 @@ import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
@@ -157,15 +159,21 @@ import com.android.systemui.keyguard.KeyguardViewMediator;
 import com.android.systemui.navigation.NavigationController;
 import com.android.systemui.navigation.Navigator;
 import com.android.systemui.qs.QSContainer;
+import com.android.systemui.omni.StatusBarHeaderMachine;
 import com.android.systemui.qs.QSPanel;
+import com.android.systemui.recents.Recents;
+import com.android.systemui.recents.RecentsActivity;
 import com.android.systemui.recents.ScreenPinningRequest;
 import com.android.systemui.recents.events.EventBus;
 import com.android.systemui.recents.events.activity.AppTransitionFinishedEvent;
 import com.android.systemui.recents.events.activity.UndockingTaskEvent;
 import com.android.systemui.settings.BrightnessController;
+import com.android.systemui.slimrecent.RecentController;
+import com.android.systemui.slimrecent.SlimScreenPinningRequest;
 import com.android.systemui.stackdivider.Divider;
 import com.android.systemui.stackdivider.WindowManagerProxy;
 import com.android.systemui.statusbar.ActivatableNotificationView;
+import com.android.systemui.statusbar.AppSidebar;
 import com.android.systemui.statusbar.BackDropView;
 import com.android.systemui.statusbar.BaseStatusBar;
 import com.android.systemui.statusbar.CommandQueue;
@@ -202,6 +210,9 @@ import com.android.systemui.statusbar.policy.KeyguardMonitor;
 import com.android.systemui.statusbar.policy.KeyguardUserSwitcher;
 import com.android.systemui.statusbar.policy.LocationControllerImpl;
 import com.android.systemui.statusbar.policy.NetworkController;
+import com.android.systemui.statusbar.policy.MinitBattery;
+import com.android.systemui.statusbar.policy.MinitBatteryController;
+import com.android.systemui.statusbar.policy.NetworkController;
 import com.android.systemui.statusbar.policy.NetworkControllerImpl;
 import com.android.systemui.statusbar.policy.NextAlarmController;
 import com.android.systemui.statusbar.policy.PreviewInflater;
@@ -216,6 +227,7 @@ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
 import com.android.systemui.statusbar.stack.NotificationStackScrollLayout
         .OnChildLocationsChangedListener;
 import com.android.systemui.statusbar.stack.StackStateAnimator;
+import com.android.systemui.statusbar.NotificationBackgroundView;
 import com.android.systemui.statusbar.stack.StackViewState;
 import com.android.systemui.volume.VolumeComponent;
 
@@ -285,12 +297,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     private static final int BRIGHTNESS_CONTROL_LONG_PRESS_TIMEOUT = 750; // ms
     private static final int BRIGHTNESS_CONTROL_LINGER_THRESHOLD = 20;
 
-    public static final int FADE_KEYGUARD_START_DELAY = 100;
-    public static final int FADE_KEYGUARD_DURATION = 300;
+    public static final int FADE_KEYGUARD_START_DELAY = 50;
+    public static final int FADE_KEYGUARD_DURATION = 150;
     public static final int FADE_KEYGUARD_DURATION_PULSING = 96;
 
     /** Allow some time inbetween the long press for back and recents. */
-    private static final int LOCK_TO_APP_GESTURE_TOLERENCE = 200;
+    private static final int LOCK_TO_APP_GESTURE_TOLERENCE = 100;
 
     /** If true, the system is in the half-boot-to-decryption-screen state.
      * Prudently disable QS and notifications.  */
@@ -369,6 +381,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     protected LockscreenWallpaper mLockscreenWallpaper;
     WeatherControllerImpl mWeatherController;
     SuControllerImpl mSuController;
+    MinitBatteryController mMinitBatteryController;
 
     int mNaturalBarHeight = -1;
 
@@ -431,6 +444,23 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
     int mMaxAllowedKeyguardNotifications;
 
+    //Blur stuff
+    private int mBlurScale;
+    private int mBlurRadius;
+    private boolean mTranslucentQuickSettings;
+    private boolean mBlurredStatusBarExpandedEnabled;
+    private boolean mTranslucentNotifications;
+    private boolean mTranslucentHeader;
+    private int mHeaderTranslucencyPercentage;
+    private int mQSTranslucencyPercentage;
+    private int mNotTranslucencyPercentage;
+    private boolean mBlurredRecents;
+    private int mRadiusRecents;
+    private int mScaleRecents;
+    private int mBlurDarkColorFilter;
+    private int mBlurMixedColorFilter;
+    private int mBlurLightColorFilter;
+
     boolean mExpandedVisible;
 
     // Aicp logo
@@ -468,6 +498,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     int mLinger;
     int mInitialTouchX;
     int mInitialTouchY;
+    private StatusBarHeaderMachine mStatusBarHeaderMachine;
 
     // for disabling the status bar
     int mDisabled1 = 0;
@@ -492,8 +523,13 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
     private int mNavigationIconHints = 0;
     private HandlerThread mHandlerThread;
+
     private NavigationController mNavigationController;
     private DUPackageMonitor mPackageMonitor;
+
+    private RecentController mSlimRecents;
+
+    private SlimScreenPinningRequest mSlimScreenPinningRequest;
 
     private View.OnTouchListener mUserAutoHideListener = new View.OnTouchListener() {
         @Override
@@ -567,7 +603,10 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                    Settings.Secure.QS_ROWS_LANDSCAPE),
                    false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.Secure.getUriFor(
-                   Settings.Secure.QS_COLUMNS),
+                   Settings.Secure.QS_COLUMNS_PORTRAIT),
+                   false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                   Settings.Secure.QS_COLUMNS_LANDSCAPE),
                    false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                    Settings.System.STATUS_BAR_SHOW_CARRIER),
@@ -583,6 +622,74 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.NAV_BAR_DYNAMIC),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.System.BLUR_SCALE_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.BLUR_RADIUS_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_QUICK_SETTINGS_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_QUICK_SETTINGS_PRECENTAGE_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.STATUS_BAR_EXPANDED_ENABLED_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_NOTIFICATIONS_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_NOTIFICATIONS_PRECENTAGE_PREFERENCE_KEY), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_HEADER_PREFERENCE_KEY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_HEADER_PRECENTAGE_PREFERENCE_KEY), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_APPS_ENABLED_PREFERENCE_KEY),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_APPS_SCALE_PREFERENCE_KEY),
+                    false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_APPS_RADIUS_PREFERENCE_KEY),
+                    false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.APP_SIDEBAR_POSITION),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.STATUS_BAR_CUSTOM_HEADER_SHADOW),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.STATUS_BAR_CUSTOM_HEADER),
+                    false, this, UserHandle.USER_ALL);
+            mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QS_QUICKBAR_SCROLL_ENABLED),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.BLUR_DARK_COLOR_PREFERENCE_KEY),
+                    false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.BLUR_LIGHT_COLOR_PREFERENCE_KEY),
+                    false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.BLUR_MIXED_COLOR_PREFERENCE_KEY),
+                    false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.USE_SLIM_RECENTS), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_BG_COLOR), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_TEXT_COLOR), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.NAVBAR_TINT_SWITCH),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.NAVBAR_BUTTON_COLOR),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.NAVBAR_BUTON_CUSTOM_ICON_SWITCH),
                     false, this, UserHandle.USER_ALL);
             update();
         }
@@ -609,7 +716,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     Settings.Secure.QS_ROWS_LANDSCAPE))) {
                     updateResources();
             } else if (uri.equals(Settings.Secure.getUriFor(
-                    Settings.Secure.QS_COLUMNS))) {
+                    Settings.Secure.QS_COLUMNS_PORTRAIT))
+                    || uri.equals(Settings.Secure.getUriFor(
+                    Settings.Secure.QS_COLUMNS_LANDSCAPE))) {
                     if (mHeader != null) {
                         mHeader.updateSettings();
                     }
@@ -628,6 +737,49 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             } else if (uri.equals(Settings.System.getUriFor(
                       Settings.System.NAV_BAR_DYNAMIC))) {
                       mNavigationController.updateNavbarOverlay(mContext.getResources());
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_HEADER_PREFERENCE_KEY))) {
+                    mTranslucentHeader = Settings.System.getIntForUser(
+                                        mContext.getContentResolver(),
+                                        Settings.System.TRANSLUCENT_HEADER_PREFERENCE_KEY,
+                                        0, UserHandle.USER_CURRENT) == 1;
+                    updateRowStates();
+                    updateSpeedbump();
+                    updateClearAll();
+                    updateEmptyShadeView();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.TRANSLUCENT_QUICK_SETTINGS_PREFERENCE_KEY))) {
+                    mTranslucentQuickSettings = Settings.System.getIntForUser(
+                                        mContext.getContentResolver(),
+                                        Settings.System.TRANSLUCENT_QUICK_SETTINGS_PREFERENCE_KEY,
+                                        0, UserHandle.USER_CURRENT) == 1;
+                    updateRowStates();
+                    updateSpeedbump();
+                    updateClearAll();
+                    updateEmptyShadeView();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.RECENT_APPS_ENABLED_PREFERENCE_KEY))) {
+                    mBlurredRecents = Settings.System.getIntForUser(
+                                        mContext.getContentResolver(),
+                                        Settings.System.RECENT_APPS_ENABLED_PREFERENCE_KEY,
+                                        0, UserHandle.USER_CURRENT) == 1;
+                    RecentsActivity.startBlurTask();
+                    updatePreferences(mContext);
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.USE_SLIM_RECENTS))) {
+                updateRecents();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_BG_COLOR))
+                    || uri.equals(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_TEXT_COLOR))) {
+                rebuildRecentsScreen();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.NAVBAR_TINT_SWITCH))
+                    || uri.equals(Settings.System.getUriFor(
+                    Settings.System.NAVBAR_BUTTON_COLOR))
+                    || uri.equals(Settings.System.getUriFor(
+                    Settings.System.NAVBAR_BUTON_CUSTOM_ICON_SWITCH))) {
+                mNavigationController.updateNavbarOverlay(mContext.getResources());
             }
 
             update();
@@ -664,10 +816,65 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
             if (mNotificationPanel != null) {
                 mNotificationPanel.updateSettings();
+
+            mBlurScale = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.BLUR_SCALE_PREFERENCE_KEY, 10);
+            mBlurRadius = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.BLUR_RADIUS_PREFERENCE_KEY, 5);
+            mTranslucentQuickSettings =  Settings.System.getIntForUser(resolver,
+                    Settings.System.TRANSLUCENT_QUICK_SETTINGS_PREFERENCE_KEY, 0, UserHandle.USER_CURRENT) == 1;
+            mBlurredStatusBarExpandedEnabled = Settings.System.getIntForUser(resolver,
+                    Settings.System.STATUS_BAR_EXPANDED_ENABLED_PREFERENCE_KEY, 0, UserHandle.USER_CURRENT) == 1;
+            mTranslucentNotifications = Settings.System.getIntForUser(resolver,
+                    Settings.System.TRANSLUCENT_NOTIFICATIONS_PREFERENCE_KEY, 0, UserHandle.USER_CURRENT) == 1;
+            mTranslucentHeader = Settings.System.getIntForUser(resolver,
+                    Settings.System.TRANSLUCENT_HEADER_PREFERENCE_KEY, 0, UserHandle.USER_CURRENT) == 1;
+            mQSTranslucencyPercentage = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.TRANSLUCENT_QUICK_SETTINGS_PRECENTAGE_PREFERENCE_KEY, 60);
+            mHeaderTranslucencyPercentage = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.TRANSLUCENT_HEADER_PRECENTAGE_PREFERENCE_KEY, 70);
+            mNotTranslucencyPercentage = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.TRANSLUCENT_NOTIFICATIONS_PRECENTAGE_PREFERENCE_KEY, 70);
+            mBlurredRecents = Settings.System.getIntForUser(resolver,
+                    Settings.System.RECENT_APPS_ENABLED_PREFERENCE_KEY, 0, UserHandle.USER_CURRENT) == 1;
+            mScaleRecents = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.RECENT_APPS_SCALE_PREFERENCE_KEY, 6);
+            mRadiusRecents = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.RECENT_APPS_RADIUS_PREFERENCE_KEY, 3);
+            mBlurDarkColorFilter = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.BLUR_DARK_COLOR_PREFERENCE_KEY, Color.LTGRAY);
+            mBlurMixedColorFilter = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.BLUR_MIXED_COLOR_PREFERENCE_KEY, Color.GRAY);
+            mBlurLightColorFilter = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.BLUR_LIGHT_COLOR_PREFERENCE_KEY, Color.DKGRAY);
+
+            RecentsActivity.updateBlurColors(mBlurDarkColorFilter,mBlurMixedColorFilter,mBlurLightColorFilter);
+            RecentsActivity.updateRadiusScale(mScaleRecents,mRadiusRecents);
             }
 
+            int sidebarPosition = Settings.System.getInt(resolver,
+                    Settings.System.APP_SIDEBAR_POSITION,
+                    AppSidebar.SIDEBAR_POSITION_LEFT);
+            if (sidebarPosition != mSidebarPosition) {
+                mSidebarPosition = sidebarPosition;
+                removeSidebarView();
+                addSidebarView();
+            }
+
+            if (mNotificationPanel != null) {
+                mNotificationPanel.updateSettings();
+            }
+
+            if (mHeader != null) {
+                mHeader.updateSettings();
+            }
+
+            // update recents
+            updateRecents();
+            rebuildRecentsScreen();
         }
     }
+
     // ensure quick settings is disabled until the current user makes it through the setup wizard
     private boolean mUserSetup = false;
     private ContentObserver mUserSetupObserver = new ContentObserver(new Handler()) {
@@ -954,6 +1161,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         addNavigationBar();
 
+        updateRecents();
+
         SettingsObserver observer = new SettingsObserver(mHandler);
         observer.observe();
 
@@ -1132,6 +1341,11 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     Settings.System.STATUS_BAR_SHOW_TICKER, 0, UserHandle.USER_CURRENT) == 1;
         initTickerView();
 
+        addSidebarView();
+        addAppCircleSidebar();
+
+        mSlimScreenPinningRequest = new SlimScreenPinningRequest(mContext);
+
         // set the initial view visibility
         setAreThereNotifications();
 
@@ -1200,6 +1414,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
         mWeatherController = new WeatherControllerImpl(mContext);
 
+        mStatusBarHeaderMachine = new StatusBarHeaderMachine(mContext);
+
         // Set up the quick settings tile panel
         AutoReinflateContainer container = (AutoReinflateContainer) mStatusBarWindow.findViewById(
                 R.id.qs_auto_reinflate_container);
@@ -1222,11 +1438,24 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     mQSPanel.setBrightnessMirror(mBrightnessMirrorController);
                     mKeyguardStatusBar.setQSPanel(mQSPanel);
                     mHeader = qsContainer.getHeader();
+
+                    // on dpi changes the header is recreated so we need
+                    // to add the new one again as addObserver
+                    // the old one will be removed in the same step
+                    mStatusBarHeaderMachine.addObserver((QuickStatusBarHeader) mHeader);
+                    mStatusBarHeaderMachine.updateEnablement();
+
+                    // Update all other settings
+                    mHeader.updateSettings();
+
                     initSignalCluster(mHeader);
                     mHeader.setActivityStarter(PhoneStatusBar.this);
                 }
             });
         }
+
+        mMinitBatteryController = new MinitBatteryController(mContext, mStatusBarView, mKeyguardStatusBar);
+        mPackageMonitor.addListener(mMinitBatteryController);
 
         // User info. Trigger first load.
         mKeyguardStatusBar.setUserInfoController(mUserInfoController);
@@ -1309,7 +1538,46 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         // Private API call to make the shadows look better for Recents
         ThreadedRenderer.overrideProperty("ambientRatio", String.valueOf(1.5f));
 
+        try {
+            BroadcastReceiver receiver = new BroadcastReceiver() {
+
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (NotificationPanelView.mKeyguardShowing) {
+                        return;
+                    }
+                    String action = intent.getAction();
+
+               if (action.equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
+                        if (NotificationPanelView.mKeyguardShowing) {
+                            return;
+                        }
+                        RecentsActivity.onConfigurationChanged();
+
+                        if (mExpandedVisible && NotificationPanelView.mBlurredStatusBarExpandedEnabled && (!NotificationPanelView.mKeyguardShowing)) {
+                            makeExpandedInvisible();
+                        }
+                    }
+                }
+            };
+
+            IntentFilter intent = new IntentFilter();
+            intent.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
+            this.mContext.registerReceiver(receiver, intent);
+
+            RecentsActivity.init(this.mContext);
+
+            updatePreferences(this.mContext);
+        } catch (Exception e){
+            Log.d("mango918", String.valueOf(e));
+        }
+
         return mStatusBarView;
+    }
+
+    public static void updatePreferences(Context context) {
+        RecentsActivity.updatePreferences(context);
+        BaseStatusBar.updatePreferences();
     }
 
     private void initEmergencyCryptkeeperText() {
@@ -1611,6 +1879,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
     }
 
+    void setTickerTint(int color) {
+        if (mTicker != null) {
+            mTicker.setDefaultColor(color);
+        }
+    }
+
     public int getStatusBarHeight() {
         if (mNaturalBarHeight < 0) {
             final Resources res = mContext.getResources();
@@ -1653,6 +1927,21 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
     @Override
     protected void toggleSplitScreenMode(int metricsDockAction, int metricsUndockAction) {
+        if (mSlimRecents != null) {
+            int dockSide = WindowManagerProxy.getInstance().getDockSide();
+            if (dockSide == WindowManager.DOCKED_INVALID) {
+                mSlimRecents.startMultiWindow();
+                if (metricsDockAction != -1) {
+                    MetricsLogger.action(mContext, metricsDockAction);
+                }
+            } else {
+                EventBus.getDefault().send(new UndockingTaskEvent());
+                if (metricsUndockAction != -1) {
+                    MetricsLogger.action(mContext, metricsUndockAction);
+                }
+            }
+            return;
+        }
         if (mRecents == null) {
             return;
         }
@@ -1767,12 +2056,13 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                     | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-                    | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
+                    | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
+                    | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT);
         // this will allow the navbar to run in an overlay on devices that support this
-        if (ActivityManager.isHighEndGfx()) {
+/*        if (ActivityManager.isHighEndGfx()) {
             lp.flags |= WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
-        }
+        }*/ //*Keep for possible future use.
 
         lp.setTitle("NavigationBar");
         lp.windowAnimations = 0;
@@ -2611,7 +2901,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                                 + mBackdropBack.getDrawable());
                     }
                     mBackdropFront.animate()
-                            .setDuration(250)
+                            .setDuration(150)
                             .alpha(0f).withEndAction(mHideBackdropFront);
                 }
             }
@@ -2657,6 +2947,10 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     }
                 }
             }
+        }
+
+        if (mStatusBarWindowManager != null) {
+            mStatusBarWindowManager.setShowingMedia(hasArtwork);
         }
         Trace.endSection();
     }
@@ -3084,6 +3378,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     }
 
     void makeExpandedVisible(boolean force) {
+        NotificationPanelView.startBlurTask();
         if (SPEW) Log.d(TAG, "Make expanded visible: expanded visible=" + mExpandedVisible);
         if (!force && (mExpandedVisible || !panelsEnabled())) {
             return;
@@ -3247,6 +3542,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         if (!mStatusBarKeyguardViewManager.isShowing()) {
             WindowManagerGlobal.getInstance().trimMemory(ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN);
         }
+        NotificationPanelView.recycle();
     }
 
     private void adjustBrightness(int x) {
@@ -3404,6 +3700,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         if (mNavigationController.getBar() != null) {
             mNavigationController.getBar().setNavigationIconHints(hints);
+        }
+        if (mPieController != null) {
+            mPieController.setNavigationIconHints(hints);
         }
         checkBarModes();
     }
@@ -3682,6 +3981,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
     @Override
     public void topAppWindowChanged(boolean showMenu) {
+        if (mPieController != null && mPieController.getControlPanel() != null)
+            mPieController.getControlPanel().setMenu(showMenu);
+
         if (SPEW) {
             Log.d(TAG, (showMenu?"showing":"hiding") + " the MENU button");
         }
@@ -3982,7 +4284,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         mStatusBarWindowManager = new StatusBarWindowManager(mContext);
         mRemoteInputController = new RemoteInputController(mStatusBarWindowManager,
                 mHeadsUpManager);
+        mStatusBarWindowManager.setShowingMedia(mKeyguardShowingMedia);
         mStatusBarWindowManager.add(mStatusBarWindow, getStatusBarHeight());
+        mKeyguardMonitor.addCallback(mStatusBarWindowManager);
     }
 
     // called by makeStatusbar and also by PhoneStatusBarView
@@ -4141,10 +4445,35 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                 notifyHeadsUpScreenOff();
                 finishBarAnimations();
                 resetUserExpandedStates();
+                // detach PA Pie when screen is turned off
+                if (mPieController != null) mPieController.detachPie();
+            }
+            else if (Intent.ACTION_CONFIGURATION_CHANGED.equals(action)) {
+                Configuration config = mContext.getResources().getConfiguration();
+                try {
+                    // position app sidebar on left if in landscape orientation and device has a navbar
+                    ContentResolver resolver = mContext.getContentResolver();
+                    boolean sidebarEnabled = Settings.System.getInt(
+                        resolver, Settings.System.APP_SIDEBAR_ENABLED, 0) == 1;
+                    if (sidebarEnabled
+                        && mWindowManagerService.hasNavigationBar()
+                        && config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                            mWindowManager.updateViewLayout(mAppSidebar,
+                                getAppSidebarLayoutParams(AppSidebar.SIDEBAR_POSITION_LEFT));
+                            mHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mAppSidebar.setPosition(AppSidebar.SIDEBAR_POSITION_LEFT);
+                                }
+                            }, 500);
+                    }
+                } catch (RemoteException e) {
+                }
             }
             else if (Intent.ACTION_SCREEN_ON.equals(action)) {
                 mScreenOn = true;
                 notifyNavigationBarScreenOn(true);
+                NotificationPanelView.recycle();
             } else if (cyanogenmod.content.Intent.ACTION_SCREEN_CAMERA_GESTURE.equals(action)) {
                 boolean userSetupComplete = Settings.Secure.getInt(mContext.getContentResolver(),
                         Settings.Secure.USER_SETUP_COMPLETE, 0) != 0;
@@ -4232,6 +4561,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         updateRowStates();
         mScreenPinningRequest.onConfigurationChanged();
         mNetworkController.onConfigurationChanged();
+        mStatusBarWindowManager.onConfigurationChanged();
     }
 
     @Override
@@ -4247,6 +4577,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         mLockscreenWallpaper.setCurrentUser(newUserId);
         mScrimController.setCurrentUser(newUserId);
         updateMediaMetaData(true, false);
+        mStatusBarHeaderMachine.updateEnablement();
     }
 
     private void setControllerUsers() {
@@ -4534,6 +4865,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             mNavigationController.destroy();
         }
         mPackageMonitor.removeListener(mNavigationController);
+        mPackageMonitor.removeListener(mMinitBatteryController);
         mPackageMonitor.unregister();
 
         if (mHandlerThread != null) {
@@ -4542,6 +4874,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
         mContext.unregisterReceiver(mBroadcastReceiver);
         mContext.unregisterReceiver(mDemoReceiver);
+        mContext.unregisterReceiver(mDUReceiver);
         mAssistManager.destroy();
 
         final SignalClusterView signalCluster =
@@ -5116,6 +5449,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
     public void onClosingFinished() {
         runPostCollapseRunnables();
+        mHeader.onClosingFinished();
     }
 
     public void onUnlockHintStarted() {
@@ -5463,6 +5797,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     }
 
     public void showScreenPinningRequest(int taskId, boolean allowCancel) {
+        hideRecents(false, false);
+        //mSlimScreenPinningRequest.showPrompt(taskId, allowCancel);
         mScreenPinningRequest.showPrompt(taskId, allowCancel);
     }
 
@@ -5742,6 +6078,73 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                         handleStopDozing();
                         break;
                 }
+            }
+        }
+    }
+
+    @Override
+    protected void hideRecents(boolean triggeredFromAltTab, boolean triggeredFromHomeKey) {
+        if (mSlimRecents != null) {
+            mSlimRecents.hideRecents(triggeredFromHomeKey);
+        } else {
+            super.hideRecents(triggeredFromAltTab, triggeredFromHomeKey);
+        }
+    }
+
+    @Override
+    protected void toggleRecents() {
+        if (mSlimRecents != null) {
+            sendCloseSystemWindows(mContext, SYSTEM_DIALOG_REASON_RECENT_APPS);
+            mSlimRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
+        } else {
+            super.toggleRecents();
+        }
+    }
+
+    @Override
+    protected void preloadRecents() {
+        if (mSlimRecents != null) {
+            mSlimRecents.preloadRecentTasksList();
+        } else {
+            super.preloadRecents();
+        }
+    }
+
+    @Override
+    protected void cancelPreloadingRecents() {
+        if (mSlimRecents != null) {
+            mSlimRecents.cancelPreloadingRecentTasksList();
+        } else {
+            super.cancelPreloadingRecents();
+        }
+    }
+
+    protected void rebuildRecentsScreen() {
+        if (mSlimRecents != null) {
+            mSlimRecents.rebuildRecentsScreen();
+        }
+    }
+
+    protected void updateRecents() {
+        boolean slimRecents = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.USE_SLIM_RECENTS, 0, UserHandle.USER_CURRENT) == 1;
+
+        if (slimRecents) {
+            mSlimRecents = new RecentController(mContext, mLayoutDirection);
+            mRecents = null;
+            //mSlimRecents.setCallback(this);
+            rebuildRecentsScreen();
+        } else {
+            mRecents = getComponent(Recents.class);
+            mSlimRecents = null;
+        }
+    }
+
+    private static void sendCloseSystemWindows(Context context, String reason) {
+        if (ActivityManagerNative.isSystemReady()) {
+            try {
+                ActivityManagerNative.getDefault().closeSystemDialogs(reason);
+            } catch (RemoteException e) {
             }
         }
     }

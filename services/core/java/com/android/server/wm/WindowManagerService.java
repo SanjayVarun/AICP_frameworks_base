@@ -725,9 +725,9 @@ public class WindowManagerService extends IWindowManager.Stub
     PowerManager mPowerManager;
     PowerManagerInternal mPowerManagerInternal;
 
-    float mWindowAnimationScaleSetting = 0.5f;
-    float mTransitionAnimationScaleSetting = 0.5f;
-    float mAnimatorDurationScaleSetting = 0.5f;
+    float mWindowAnimationScaleSetting = 1.0f;
+    float mTransitionAnimationScaleSetting = 1.0f;
+    float mAnimatorDurationScaleSetting = 1.0f;
     boolean mAnimationsDisabled = false;
 
     final InputManagerService mInputManager;
@@ -1073,6 +1073,7 @@ public class WindowManagerService extends IWindowManager.Stub
         mSfHwRotation = android.os.SystemProperties.getInt("ro.sf.hwrotation",0) / 90;
 
         showEmulatorDisplayOverlayIfNeeded();
+        mUiHandler = UiThread.getHandler();
     }
 
     public InputMonitor getInputMonitor() {
@@ -3970,7 +3971,13 @@ public class WindowManagerService extends IWindowManager.Stub
                 Slog.w(TAG_WM, "Attempted to set orientation of non-existing app token: " + token);
                 return;
             }
-
+            if(requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                  || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                  || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                  || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE) {
+                Slog.i(TAG, "setAppOrientation token: "+token+" requestedOrientation: "+requestedOrientation);
+                Settings.Global.putString(mContext.getContentResolver(), Settings.Global.SINGLE_HAND_MODE, "");
+            }
             atoken.requestedOrientation = requestedOrientation;
         }
     }
@@ -4019,6 +4026,16 @@ public class WindowManagerService extends IWindowManager.Stub
             }
 
             final boolean changed = mFocusedApp != newFocus;
+            if (changed && newFocus != null) {
+                int requestedOrientation = newFocus.requestedOrientation;
+                if(requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                         || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                         || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                         || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE) {
+                    Slog.i(TAG, "setFocusedApp token: "+token+" requestedOrientation: "+requestedOrientation);
+                    Settings.Global.putString(mContext.getContentResolver(), Settings.Global.SINGLE_HAND_MODE, "");
+                }
+            }
             if (changed) {
                 mFocusedApp = newFocus;
                 mInputMonitor.setFocusedAppLw(newFocus);
@@ -5841,6 +5858,12 @@ public class WindowManagerService extends IWindowManager.Stub
     @Override
     public void reboot(boolean confirm) {
         ShutdownThread.reboot(mContext, PowerManager.SHUTDOWN_USER_REQUESTED, confirm);
+    }
+
+    // Called by window manager policy.  Not exposed externally.
+    @Override
+    public void rebootTile() {
+        ShutdownThread.reboot(mContext, null, true);
     }
 
     // Called by window manager policy.  Not exposed externally.
@@ -8234,6 +8257,11 @@ public class WindowManagerService extends IWindowManager.Stub
 
     public void systemReady() {
         mPolicy.systemReady();
+        mSingleHandSwitch = judgeSingleHandSwitchBySize() ? 1 : 0;
+        if (mSingleHandSwitch > 0) {
+            mSingleHandAdapter = new SingleHandAdapter(mContext, mH, mUiHandler, this);
+            mSingleHandAdapter.registerLocked();
+        }
     }
 
     // -------------------------------------------------------------
@@ -11800,5 +11828,45 @@ public class WindowManagerService extends IWindowManager.Stub
                 return getDefaultDisplayContentLocked().getDockedDividerController().isResizing();
             }
         }
+    }
+
+    public int mSingleHandMode = 0;
+    private SingleHandAdapter mSingleHandAdapter;
+    private final Handler mUiHandler;
+
+    private static int mSingleHandSwitch;
+    public int getSingleHandMode() {
+        return mSingleHandMode;
+    }
+    public void setSingleHandMode(int singleHandMode) {
+        Slog.i(TAG, "cur: "+mSingleHandMode+" to: "+singleHandMode);
+        if(mSingleHandMode == singleHandMode) return;
+        mSingleHandMode = singleHandMode;
+    }
+
+    /**
+     * Freeze rotation changes.  (Enable "rotation lock".)
+     * not persists across reboots.
+     * @param rotation The desired rotation to freeze to, or -1 to thaw rotation
+     * changes
+     */
+    public void freezeOrThawRotation(int rotation) {
+        if (!checkCallingPermission(android.Manifest.permission.SET_ORIENTATION,
+                "freezeRotation()")) {
+            throw new SecurityException("Requires SET_ORIENTATION permission");
+        }
+        if (rotation < -1 || rotation > Surface.ROTATION_270) {
+            throw new IllegalArgumentException("Rotation argument must be -1 or a valid "
+                    + "rotation constant.");
+        }
+
+        Slog.i(TAG, "freezeRotationTemporarily: mRotation=" + mRotation);
+
+        mPolicy.freezeOrThawRotation(rotation);
+        updateRotationUnchecked(false, false);
+    }
+
+    private boolean judgeSingleHandSwitchBySize() {
+        return mContext.getResources().getBoolean(com.android.internal.R.bool.single_hand_mode);
     }
 }

@@ -50,6 +50,9 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraAccessException;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.os.Build;
@@ -102,10 +105,13 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import com.android.internal.util.aicp.AicpActions;
+
 import static com.android.internal.util.cm.PowerMenuConstants.*;
 
 import static android.view.WindowManager.TAKE_SCREENSHOT_FULLSCREEN;
 import static android.view.WindowManager.TAKE_SCREENSHOT_SELECTED_REGION;
+
 
 /**
  * Helper to show the global actions dialog.  Each item is an {@link Action} that
@@ -143,6 +149,8 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
     private boolean mHasTelephony;
     private boolean mHasVibrator;
     private final boolean mShowSilentToggle;
+    private static boolean mTorchEnabled = false;
+    private boolean showReboot;
     private final EmergencyAffordanceManager mEmergencyAffordanceManager;
 
     // Power menu customizations
@@ -255,6 +263,11 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
      * @param keyguardShowing True if keyguard is showing
      */
     public void showDialog(boolean keyguardShowing, boolean isDeviceProvisioned) {
+        showDialog(keyguardShowing, isDeviceProvisioned, false);
+    }
+
+    public void showDialog(boolean keyguardShowing, boolean isDeviceProvisioned, boolean mShowReboot) {
+        showReboot = mShowReboot;
         mKeyguardShowing = keyguardShowing;
         mDeviceProvisioned = isDeviceProvisioned;
         if (mDialog != null) {
@@ -445,6 +458,8 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 mItems.add(new getScreenshotAction());
             } else if (GLOBAL_ACTION_KEY_SCREENRECORD.equals(actionKey)) {
                 mItems.add(getScreenrecordAction());
+            } else if (GLOBAL_ACTION_KEY_ONTHEGO.equals(actionKey)) {
+                mItems.add(getOnTheGoAction());
             } else if (GLOBAL_ACTION_KEY_AIRPLANE.equals(actionKey)) {
                 mItems.add(mAirplaneModeOn);
             } else if (GLOBAL_ACTION_KEY_BUGREPORT.equals(actionKey)) {
@@ -472,6 +487,8 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 mItems.add(getAssistAction());
             } else if (GLOBAL_ACTION_KEY_RESTART.equals(actionKey)) {
                 mItems.add(new RestartAction());
+            } else if (GLOBAL_ACTION_KEY_TORCH.equals(actionKey)) {
+                mItems.add(getTorchToggleAction());
             } else {
                 Log.e(TAG, "Invalid global action key " + actionKey);
             }
@@ -540,12 +557,19 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             return true;
         }
 
+
+        private boolean isConfirmed() {
+            return Settings.System.getInt(mContext.getContentResolver(),
+                   Settings.System.CONFIRM_SHUTDOWN_SWITCH, 1) == 1;
+        }
+
         @Override
         public void onPress() {
             // shutdown by making sure radio and power are handled accordingly.
-            mWindowManagerFuncs.shutdown(false /* confirm */);
+            mWindowManagerFuncs.shutdown(isConfirmed() /* confirm */);
         }
     }
+
 
     private final class RestartAction extends SinglePressAction implements LongPressAction {
         private RestartAction() {
@@ -632,6 +656,31 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
             public boolean showBeforeProvisioning() {
                 return false;
+            }
+        };
+    }
+
+    private Action getOnTheGoAction() {
+        return new SinglePressAction(com.android.internal.R.drawable.ic_lock_onthego,
+                        R.string.global_action_onthego) {
+            @Override
+            public void onPress() {
+                 AicpActions.processAction(mContext,
+                        AicpActions.ACTION_ONTHEGO_TOGGLE);
+            }
+
+            public boolean onLongPress() {
+                return true;
+            }
+
+            @Override
+            public boolean showDuringKeyguard() {
+                return true;
+            }
+
+            @Override
+            public boolean showBeforeProvisioning() {
+                return true;
             }
         };
     }
@@ -784,6 +833,37 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             @Override
             public boolean showBeforeProvisioning() {
                 return true;
+            }
+        };
+    }
+
+    private Action getTorchToggleAction() {
+        return new SinglePressAction(com.android.internal.R.drawable.ic_lock_torch,
+                R.string.global_action_torch) {
+
+            public void onPress() {
+                try {
+                    CameraManager cameraManager = (CameraManager)
+                            mContext.getSystemService(Context.CAMERA_SERVICE);
+                    for (final String cameraId : cameraManager.getCameraIdList()) {
+                        CameraCharacteristics characteristics =
+                            cameraManager.getCameraCharacteristics(cameraId);
+                        int orient = characteristics.get(CameraCharacteristics.LENS_FACING);
+                        if (orient == CameraCharacteristics.LENS_FACING_BACK) {
+                            cameraManager.setTorchMode(cameraId, !mTorchEnabled);
+                            mTorchEnabled = !mTorchEnabled;
+                        }
+                    }
+                } catch (CameraAccessException e) {
+                }
+            }
+
+            public boolean showDuringKeyguard() {
+                return true;
+            }
+
+            public boolean showBeforeProvisioning() {
+                return false;
             }
         };
     }

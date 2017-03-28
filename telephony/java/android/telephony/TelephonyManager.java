@@ -3253,6 +3253,16 @@ public class TelephonyManager {
     }
 
     /**
+     * @hide
+     */
+    public void toggle2G(boolean twoGees) {
+        try {
+            getITelephony().toggle2G(twoGees);
+        } catch (RemoteException e) {
+        }
+    }
+
+    /**
      * Returns the MMS user agent.
      */
     public String getMmsUserAgent() {
@@ -5021,6 +5031,24 @@ public class TelephonyManager {
            if (telephony == null)
                return false;
            return telephony.isImsRegistered();
+       } catch (RemoteException ex) {
+           return false;
+       } catch (NullPointerException ex) {
+           return false;
+       }
+   }
+
+   /**
+    * Returns the IMS Registration Status
+    * using subId
+    * @hide
+    */
+   public boolean isImsRegisteredForSubscriber(int subId) {
+       try {
+           ITelephony telephony = getITelephony();
+           if (telephony == null)
+               return false;
+           return telephony.isImsRegisteredForSubscriber(subId);
        } catch (RemoteException ex) {
            return false;
        } catch (NullPointerException ex) {

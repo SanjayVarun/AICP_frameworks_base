@@ -213,7 +213,6 @@
   <!-- Launch defaults preference summary with some set [CHAR LIMIT=40] -->
   <!-- Launch defaults preference summary with none set [CHAR LIMIT=40] -->
   <!-- Text-To-Speech (TTS) settings -->
-  <skip></skip>
   <!-- Name of the TTS package as listed by the package manager. -->
   <!-- TTS option item name in the main settings screen -->
   <!-- On main TTS Settings screen, in default settings section, setting default speech rate for synthesized voice -->
@@ -264,7 +263,6 @@
   <!-- Header for items under the work user [CHAR LIMIT=30] -->
   <!-- Full package name of OEM preferred device feedback reporter. Leave this blank, overlaid in Settings/TvSettings [DO NOT TRANSLATE] -->
   <!-- Development settings -->
-  <skip></skip>
   <!-- Development Settings.  the title for the item to take the user to Development settings.  Development settings are settings meant for application developers.  -->
   <!-- Development settings enable title. -->
   <!-- Development Settings summary.  The summary of the item to take the user to Development settings.  Development settings are settings meant for application developers. -->
@@ -416,8 +414,11 @@
   <!-- Subtitle for the accessibility preference to configure display color space correction. [CHAR LIMIT=NONE] -->
   <!-- Summary shown for color space correction preference when its value is overridden by another preference [CHAR LIMIT=35] -->
   <!-- [CHAR_LIMIT=40] Label for estimated remaining duration of battery charging/discharging -->
+  <string name="power_remaining_duration_only">Falten <xliff:g id="time">%1$s</xliff:g> aprox.</string>
   <!-- [CHAR_LIMIT=40] Short label for estimated remaining duration of battery charging/discharging -->
   <!-- [CHAR_LIMIT=40] Label for battery level chart when discharging with duration -->
+  <string name="power_discharging_duration"><xliff:g id="level">%1$s</xliff:g>
+        - falten <xliff:g id="time">%2$s</xliff:g> aprox.</string>
   <!-- [CHAR_LIMIT=40] Label for battery level chart when discharging with duration -->
   <!-- [CHAR_LIMIT=40] Label for battery level chart when charging -->
   <!-- [CHAR_LIMIT=40] Label for battery level chart when charging with duration -->
@@ -446,6 +447,7 @@
   <!-- Option in navigation drawer that leads to Settings main screen [CHAR LIMIT=30] -->
   <!-- Labels on the side of batter graph in Quick Settings and Settings [CHAR LIMIT=8] -->
   <!-- Label for length of time since the battery graph started [CHAR LIMIT=20] -->
+  <string name="charge_length_format">Hai <xliff:g name="time" example="3 hours">%1$s</xliff:g> hores</string>
   <!-- Label for length of time until battery is charged [CHAR LIMIT=20] -->
   <!-- Hint text for the IP address -->
   <!-- Hint text for DNS -->
@@ -458,6 +460,7 @@
   <!-- HTTP proxy settings. The hint text field for the hostname. -->
   <!-- Description for the screen zoom level that makes interface elements small. [CHAR LIMIT=24] -->
   <!-- Description for the device's default screen zoom level. [CHAR LIMIT=24] -->
+  <string name="screen_zoom_summary_default">Por defeutu</string>
   <!-- Description for the screen zoom level that makes interface elements large. [CHAR LIMIT=24] -->
   <!-- Description for the screen zoom level that makes interface elements larger. [CHAR LIMIT=24] -->
   <!-- Description for the screen zoom level that makes interface elements largest. [CHAR LIMIT=24] -->

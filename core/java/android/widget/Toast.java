@@ -22,11 +22,14 @@ import android.annotation.StringRes;
 import android.app.ActivityManager;
 import android.app.INotificationManager;
 import android.app.ITransientNotification;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.IBinder;
@@ -44,6 +47,8 @@ import android.view.accessibility.AccessibilityManager;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import com.android.internal.util.aicp.RandomColorHelper;
 
 /**
  * A toast is a view containing a quick little message for the user.  The toast class
@@ -67,7 +72,7 @@ import java.lang.annotation.RetentionPolicy;
  * <a href="{@docRoot}guide/topics/ui/notifiers/toasts.html">Toast Notifications</a> developer
  * guide.</p>
  * </div>
- */ 
+ */
 public class Toast {
     static final String TAG = "Toast";
     static final boolean localLOGV = false;
@@ -92,6 +97,7 @@ public class Toast {
     public static final int LENGTH_LONG = 1;
 
     final Context mContext;
+    static Context tContext;
     final TN mTN;
     int mDuration;
     View mNextView;
@@ -105,13 +111,14 @@ public class Toast {
      */
     public Toast(Context context) {
         mContext = context;
-        mTN = new TN();
+        tContext = context;
+        mTN = new TN(context.getPackageName());
         mTN.mY = context.getResources().getDimensionPixelSize(
                 com.android.internal.R.dimen.toast_y_offset);
         mTN.mGravity = context.getResources().getInteger(
                 com.android.internal.R.integer.config_toastDefaultGravity);
     }
-    
+
     /**
      * Show the view for the specified duration.
      */
@@ -138,15 +145,9 @@ public class Toast {
      * after the appropriate duration.
      */
     public void cancel() {
-        mTN.hide();
-
-        try {
-            getService().cancelToast(mContext.getPackageName(), mTN);
-        } catch (RemoteException e) {
-            // Empty
-        }
+        mTN.cancel();
     }
-    
+
     /**
      * Set the view to show.
      * @see #getView
@@ -181,7 +182,7 @@ public class Toast {
     public int getDuration() {
         return mDuration;
     }
-    
+
     /**
      * Set the margins of the view.
      *
@@ -237,7 +238,7 @@ public class Toast {
     public int getXOffset() {
         return mTN.mX;
     }
-    
+
     /**
      * Return the Y offset in pixels to apply to the gravity's location.
      */
@@ -252,7 +253,7 @@ public class Toast {
     public WindowManager.LayoutParams getWindowParams() {
         return mTN.mParams;
     }
-    
+
     /**
      * Make a standard toast that just contains a text view.
      *
@@ -266,12 +267,14 @@ public class Toast {
     public static Toast makeText(Context context, CharSequence text, @Duration int duration) {
         Toast result = new Toast(context);
 
+        final ColorStateList textColor = RandomColorHelper.getToastTextColorList(tContext);
         LayoutInflater inflate = (LayoutInflater)
                 context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View v = inflate.inflate(com.android.internal.R.layout.transient_notification, null);
         TextView tv = (TextView)v.findViewById(com.android.internal.R.id.message);
         tv.setText(text);
-        
+        tv.setTextColor(textColor);
+
         result.mNextView = v;
         result.mDuration = duration;
 
@@ -301,7 +304,7 @@ public class Toast {
     public void setText(@StringRes int resId) {
         setText(mContext.getText(resId));
     }
-    
+
     /**
      * Update the text in a Toast that was previously created using one of the makeText() methods.
      * @param s The new text for the Toast.
@@ -336,18 +339,40 @@ public class Toast {
         final Runnable mHide = new Runnable() {
             @Override
             public void run() {
-                handleHide();
-                // Don't do this in handleHide() because it is also invoked by handleShow()
-                mNextView = null;
             }
         };
 
         private final WindowManager.LayoutParams mParams = new WindowManager.LayoutParams();
+
+        private static final int SHOW = 0;
+        private static final int HIDE = 1;
+        private static final int CANCEL = 2;
         final Handler mHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                IBinder token = (IBinder) msg.obj;
-                handleShow(token);
+                switch (msg.what) {
+                    case SHOW: {
+                        IBinder token = (IBinder) msg.obj;
+                        handleShow(token);
+                        break;
+                    }
+                    case HIDE: {
+                        handleHide();
+                        // Don't do this in handleHide() because it is also invoked by handleShow()
+                        mNextView = null;
+                        break;
+                    }
+                    case CANCEL: {
+                        handleHide();
+                        // Don't do this in handleHide() because it is also invoked by handleShow()
+                        mNextView = null;
+                        try {
+                            getService().cancelToast(mPackageName, TN.this);
+                        } catch (RemoteException e) {
+                        }
+                        break;
+                    }
+                }
             }
         };
 
@@ -363,10 +388,12 @@ public class Toast {
 
         WindowManager mWM;
 
+        String mPackageName;
+
         static final long SHORT_DURATION_TIMEOUT = 5000;
         static final long LONG_DURATION_TIMEOUT = 10000;
 
-        TN() {
+        TN(String packageName) {
             // XXX This should be changed to use a Dialog, with a Theme.Toast
             // defined that sets up the layout params appropriately.
             final WindowManager.LayoutParams params = mParams;
@@ -379,6 +406,8 @@ public class Toast {
             params.flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+
+            mPackageName = packageName;
         }
 
         /**
@@ -387,7 +416,7 @@ public class Toast {
         @Override
         public void show(IBinder windowToken) {
             if (localLOGV) Log.v(TAG, "SHOW: " + this);
-            mHandler.obtainMessage(0, windowToken).sendToTarget();
+            mHandler.obtainMessage(SHOW, windowToken).sendToTarget();
         }
 
         /**
@@ -396,7 +425,12 @@ public class Toast {
         @Override
         public void hide() {
             if (localLOGV) Log.v(TAG, "HIDE: " + this);
-            mHandler.post(mHide);
+            mHandler.obtainMessage(HIDE).sendToTarget();
+        }
+
+        public void cancel() {
+            if (localLOGV) Log.v(TAG, "CANCEL: " + this);
+            mHandler.obtainMessage(CANCEL).sendToTarget();
         }
 
         public void handleShow(IBinder windowToken) {
@@ -413,6 +447,7 @@ public class Toast {
                 }
 
                 ImageView appIcon = (ImageView) mView.findViewById(android.R.id.icon);
+                final ColorStateList iconColor = RandomColorHelper.getToastIconColorList(tContext);
                 if ((Settings.System.getInt(context.getContentResolver(),
                         Settings.System.TOAST_ICON, 1) == 1)) {
                     if (appIcon != null) {
@@ -427,6 +462,8 @@ public class Toast {
                                 // nothing to do
                             }
                             appIcon.setImageDrawable(icon);
+                            appIcon.setImageTintList(iconColor);
+                            appIcon.setImageTintMode(Mode.MULTIPLY);
                         }
                     }
                 }
@@ -435,57 +472,6 @@ public class Toast {
                 // the layout direction
                 final Configuration config = mView.getContext().getResources().getConfiguration();
                 final int gravity = Gravity.getAbsoluteGravity(mGravity, config.getLayoutDirection());
-
-                switch(Settings.System.getInt(context.getContentResolver(), Settings.System.TOAST_ANIMATION, 1)) {
-                case 0:
-                        mParams.windowAnimations = -1;
-                        break;
-                case 1:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast;
-                        break;
-                case 2:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Fade;
-                        break;
-                case 3:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideRight;
-                        break;
-                case 4:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideLeft;
-                        break;
-                case 5:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Xylon;
-                        break;
-                case 6:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Toko;
-                        break;
-                case 7:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Tn;
-                        break;
-                case 8:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Honami;
-                        break;
-                case 9:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_FastFade;
-                        break;
-                case 10:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFade;
-                        break;
-                case 11:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFadeCenter;
-                        break;
-                case 12:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFadeBottom;
-                        break;
-                case 13:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Translucent;
-                        break;
-                case 14:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideLeftRight;
-                        break;
-                case 15:
-                        mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideRightLeft;
-                        break;
-                }
 
                 mParams.gravity = gravity;
                 if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.FILL_HORIZONTAL) {
@@ -526,7 +512,7 @@ public class Toast {
             event.setPackageName(mView.getContext().getPackageName());
             mView.dispatchPopulateAccessibilityEvent(event);
             accessibilityManager.sendAccessibilityEvent(event);
-        }        
+        }
 
         public void handleHide() {
             if (localLOGV) Log.v(TAG, "HANDLE HIDE: " + this + " mView=" + mView);

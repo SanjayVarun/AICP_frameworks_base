@@ -75,6 +75,8 @@ public class BatteryMeterDrawable extends Drawable implements
     public static final int BATTERY_STYLE_HIDDEN    = 4;
     public static final int BATTERY_STYLE_LANDSCAPE = 5;
     public static final int BATTERY_STYLE_TEXT      = 6;
+    public static final int BATTERY_STYLE_SOLID     = 7;
+    public static final int BATTERY_STYLE_AICP      = 8;
 
     private final int[] mColors;
     private final int mIntrinsicWidth;
@@ -270,6 +272,9 @@ public class BatteryMeterDrawable extends Drawable implements
         if (CMSettings.System.getInt(mContext.getContentResolver(),
                 CMSettings.System.STATUS_BAR_BATTERY_STYLE, 0) == 2) {
             animateCircleBattery(level, pluggedIn, charging);
+        } else if (CMSettings.System.getInt(mContext.getContentResolver(),
+                CMSettings.System.STATUS_BAR_BATTERY_STYLE, 0) == 7) {
+            animateSolidBattery(level, pluggedIn, charging);
         }
 
         postInvalidate();
@@ -331,6 +336,13 @@ public class BatteryMeterDrawable extends Drawable implements
         if (mPowerSaveEnabled) {
             return mColors[mColors.length - 1];
         }
+        if (mPluggedIn) {
+            int customColor = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.BATTERY_CHARGING_COLOR, Color.WHITE);
+            if (customColor != Color.WHITE) {
+                return customColor;
+            }
+        }
         int thresh = 0;
         int color = 0;
         for (int i = 0; i < mColors.length; i += 2) {
@@ -350,6 +362,37 @@ public class BatteryMeterDrawable extends Drawable implements
     }
 
     public void animateCircleBattery(int level, boolean pluggedIn, boolean charging) {
+        if (charging) {
+            if (mAnimator != null) mAnimator.cancel();
+
+            final int defaultAlpha = mLevelDrawable.getAlpha();
+            mAnimator = ValueAnimator.ofInt(defaultAlpha, 0, defaultAlpha);
+            mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    mLevelDrawable.setAlpha((int) animation.getAnimatedValue());
+                    invalidateSelf();
+                }
+            });
+            mAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationCancel(Animator animation) {
+                    mLevelDrawable.setAlpha(defaultAlpha);
+                    mAnimator = null;
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mLevelDrawable.setAlpha(defaultAlpha);
+                    mAnimator = null;
+                }
+            });
+            mAnimator.setDuration(2000);
+            mAnimator.start();
+        }
+    }
+
+    public void animateSolidBattery(int level, boolean pluggedIn, boolean charging) {
         if (charging) {
             if (mAnimator != null) mAnimator.cancel();
 
@@ -464,7 +507,7 @@ public class BatteryMeterDrawable extends Drawable implements
         }
 
         final int drawableResId = getBatteryDrawableResourceForStyle(style);
-        mBatteryDrawable = (LayerDrawable) res.getDrawable(drawableResId, null);
+        mBatteryDrawable = (LayerDrawable) mContext.getDrawable(drawableResId);
         mFrameDrawable = mBatteryDrawable.findDrawableByLayerId(R.id.battery_frame);
         mFrameDrawable.setTint(mCurrentBackgroundColor != 0
                 ? mCurrentBackgroundColor : res.getColor(R.color.batterymeter_frame_color));
@@ -484,7 +527,7 @@ public class BatteryMeterDrawable extends Drawable implements
         final int resId = getBatteryDrawableResourceForStyle(style);
         final Drawable batteryDrawable;
         try {
-            batteryDrawable = res.getDrawable(resId, null);
+            batteryDrawable = mContext.getDrawable(resId);
         } catch (Resources.NotFoundException e) {
             throw new BatteryMeterDrawableException(res.getResourceName(resId) + " is an " +
                     "invalid drawable", e);
@@ -535,6 +578,10 @@ public class BatteryMeterDrawable extends Drawable implements
                 return R.drawable.ic_battery_circle;
             case BATTERY_STYLE_PORTRAIT:
                 return R.drawable.ic_battery_portrait;
+            case BATTERY_STYLE_SOLID:
+                return R.drawable.ic_battery_solid;
+            case BATTERY_STYLE_AICP:
+                return R.drawable.ic_battery_aicp;
             default:
                 return 0;
         }
@@ -548,6 +595,10 @@ public class BatteryMeterDrawable extends Drawable implements
                 return R.style.BatteryMeterViewDrawable_Circle;
             case BATTERY_STYLE_PORTRAIT:
                 return R.style.BatteryMeterViewDrawable_Portrait;
+            case BATTERY_STYLE_SOLID:
+                return R.style.BatteryMeterViewDrawable_Solid;
+            case BATTERY_STYLE_AICP:
+                return R.style.BatteryMeterViewDrawable_Aicp;
             default:
                 return R.style.BatteryMeterViewDrawable;
         }

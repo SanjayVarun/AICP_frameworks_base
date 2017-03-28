@@ -61,7 +61,6 @@
   <!-- On the keyguard screen, when pattern lock is disabled, only tell them to press menu to unlock.  This is shown in small font at the bottom. -->
   <string name="keyguard_instructions_when_pattern_disabled">Empobina al menú pa desbloquiar la pantalla.</string>
   <!-- SIM messages -->
-  <skip></skip>
   <!-- When the user inserts a sim card from an unsupported network, it becomes network locked -->
   <string name="keyguard_network_locked_message">Bloquiada pa la rede</string>
   <!-- Shown when there is no SIM card. -->
@@ -94,7 +93,6 @@
   <!-- Accessibility description for the text view that indicates when the next alarm is set (not shown on screen). [CHAR_LIMIT=none] -->
   <string name="keyguard_accessibility_next_alarm">Próxima alarma afitada a les <xliff:g id="alarm" example="Fri 8:30 AM">%1$s</xliff:g></string>
   <!-- KeyguardPinView - accessibility support -->
-  <skip></skip>
   <!-- Description of the Delete button in a KeyboardView. [CHAR LIMIT=NONE] -->
   <string name="keyboardview_keycode_delete">Desaniciar</string>
   <!-- Description of the Enter button in a KeyboardView. [CHAR LIMIT=NONE] -->
@@ -190,8 +188,11 @@
   <!-- An explanation text that the pin needs to be entered since the device has just been restarted. [CHAR LIMIT=80] -->
   <!-- An explanation text that the password needs to be entered since the device has just been restarted. [CHAR LIMIT=80] -->
   <!-- An explanation text that the pattern needs to be solved since the user hasn't used strong authentication since quite some time. [CHAR LIMIT=80] -->
+  <string name="kg_prompt_reason_timeout_pattern">Ríquese\'l patrón pa más seguranza</string>
   <!-- An explanation text that the pin needs to be entered since the user hasn't used strong authentication since quite some time. [CHAR LIMIT=80] -->
+  <string name="kg_prompt_reason_timeout_pin">Ríquese\'l PIN pa más seguranza</string>
   <!-- An explanation text that the password needs to be entered since the user hasn't used strong authentication since quite some time. [CHAR LIMIT=80] -->
+  <string name="kg_prompt_reason_timeout_password">Ríquese la contraseña pa más seguranza</string>
   <!-- An explanation text that the pattern needs to be solved since profiles have just been switched. [CHAR LIMIT=80] -->
   <!-- An explanation text that the pin needs to be entered since profiles have just been switched. [CHAR LIMIT=80] -->
   <!-- An explanation text that the password needs to be entered since profiles have just been switched. [CHAR LIMIT=80] -->

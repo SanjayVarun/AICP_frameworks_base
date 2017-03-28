@@ -62,4 +62,60 @@
     <!-- QS battery accent color -->
     <color name="qs_battery_accent">@*android:color/accent_device_default_light</color>
 
+    <!-- app sidebar trigger region color -->
+    <color name="trigger_region_color">#8015a0e5</color>
+    <!-- app sidebar item text color -->
+    <color name="sidebar_item_text_color">#ffffffff</color>
+    <!-- app sidebar item text shadow color -->
+    <color name="sidebar_item_text_shadow_color">#ff000000</color>
+
+    <!-- PA PIE -->
+    <color name="pie_menu_background">#C0000000</color>
+    <color name="alpha_mask">#aa000000</color>
+    <color name="opaque_mask">#ff000000</color>
+    <color name="snap_background">#ffffffff</color>
+    <color name="pie_background">#af000000</color>
+    <color name="pie_button">#b2ffffff</color>
+    <color name="pie_select">#ff009688</color>
+    <color name="pie_outlines">#ff1b1f23</color>
+    <color name="chevron">#ff009688</color>
+    <color name="battery_juice">#ff00ff00</color>
+    <color name="battery_juice_low">#ffbb33</color>
+    <color name="battery_juice_critical">#ff4444</color>
+    <color name="battery_background">#ffffff</color>
+    <color name="status">#ffffff</color>
+
+    <!-- External QS tile tint color -->
+    <color name="external_qs_tile_tint_color">@android:color/white</color>
+
+    <!-- Recents -->
+    <color name="recents_empty_dark_color">#ff4d4d4d</color>
+    <color name="recents_empty_light_color">#ffb3b3b3</color>
+
+    <!-- Recents membar text color -->
+    <color name="recents_membar_text_color">@android:color/white</color>
+
+    <!-- Slim recent -->
+    <color name="recent_background">#80000000</color>
+
+    <!-- Card Color -->
+    <color name="card_background">#ffffffff</color>
+    <color name="card_background_header">#00ffffff</color>
+    <color name="card_backgroundExpand">#00ffffff</color>
+
+    <color name="card_text_color_header">#ff000000</color>
+
+    <!-- Used by selector -->
+    <color name="card_pressed">#7e3c3c3c</color>
+
+    <!-- Keyguard affordance circle background -->
+    <color name="keyguard_affordance_circle_background">@android:color/white</color>
+
+    <!-- Screenshot action colors -->
+    <color name="screenshot_flash_color">@android:color/white</color>
+    <color name="screenshot_background_color">@android:color/black</color>
+
+    <!-- Fonts used in the MediaQueue -->
+    <color name="notification_media_queue_text">#7c7c7c</color>
+
 </resources>

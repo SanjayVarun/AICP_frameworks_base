@@ -73,4 +73,9 @@
     <!-- config softap extention feature -->
     <java-symbol type="bool" name="config_softap_extention" />
 
+    <!-- Blur effects -->
+    <java-symbol type="bool" name="config_uiBlurEnabled" />
+
+    <!-- Whether to enable HumanInteractionController by default -->
+    <java-symbol type="bool" name="config_HICEnabledDefault" />
 </resources>
