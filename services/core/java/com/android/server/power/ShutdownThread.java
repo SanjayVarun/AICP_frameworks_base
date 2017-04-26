@@ -161,7 +161,7 @@ public final class ShutdownThread extends Thread {
         KeyguardManager km = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
         boolean keyguardLocked = km.inKeyguardRestrictedInputMode() && km.isKeyguardSecure();
         boolean advancedRebootEnabled = CMSettings.Secure.getInt(context.getContentResolver(),
-                CMSettings.Secure.ADVANCED_REBOOT, 0) == 1;
+                CMSettings.Secure.ADVANCED_REBOOT, 1) == 1;
         boolean isPrimaryUser = UserHandle.getCallingUserId() == UserHandle.USER_OWNER;
 
         return advancedRebootEnabled && !keyguardLocked && isPrimaryUser;
@@ -805,7 +805,7 @@ public final class ShutdownThread extends Thread {
                             bluetooth.getState() == BluetoothAdapter.STATE_OFF;
                     if (!bluetoothOff) {
                         Log.w(TAG, "Disabling Bluetooth...");
-                        bluetooth.disable(false);  // disable but don't persist new state
+                        bluetooth.disable(mContext.getPackageName(), false);  // disable but don't persist new state
                     }
                 } catch (RemoteException ex) {
                     Log.e(TAG, "RemoteException during bluetooth shutdown", ex);

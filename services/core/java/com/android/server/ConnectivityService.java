@@ -880,6 +880,7 @@ public class ConnectivityService extends IConnectivityManager.Stub
 
         mAvoidBadWifiTracker = createAvoidBadWifiTracker(
                 mContext, mHandler, () -> rematchForAvoidBadWifiUpdate());
+        mAvoidBadWifiTracker.start();
     }
 
     private NetworkRequest createInternetRequestForTransport(
@@ -1343,13 +1344,16 @@ public class ConnectivityService extends IConnectivityManager.Stub
     @Override
     public LinkProperties getLinkProperties(Network network) {
         enforceAccessPermission();
-        NetworkAgentInfo nai = getNetworkAgentInfoForNetwork(network);
-        if (nai != null) {
-            synchronized (nai) {
-                return new LinkProperties(nai.linkProperties);
-            }
+        return getLinkProperties(getNetworkAgentInfoForNetwork(network));
+    }
+
+    private LinkProperties getLinkProperties(NetworkAgentInfo nai) {
+        if (nai == null) {
+            return null;
         }
-        return null;
+        synchronized (nai) {
+            return new LinkProperties(nai.linkProperties);
+        }
     }
 
     private NetworkCapabilities getNetworkCapabilitiesInternal(NetworkAgentInfo nai) {
@@ -2305,11 +2309,19 @@ public class ConnectivityService extends IConnectivityManager.Stub
                     synchronized (mNetworkForNetId) {
                         nai = mNetworkForNetId.get(netId);
                     }
-                    // If captive portal status has changed, update capabilities.
+                    // If captive portal status has changed, update capabilities or disconnect.
                     if (nai != null && (visible != nai.lastCaptivePortalDetected)) {
                         final int oldScore = nai.getCurrentScore();
                         nai.lastCaptivePortalDetected = visible;
                         nai.everCaptivePortalDetected |= visible;
+                        if (nai.lastCaptivePortalDetected &&
+                            Settings.Global.CAPTIVE_PORTAL_MODE_AVOID == getCaptivePortalMode()) {
+                            if (DBG) log("Avoiding captive portal network: " + nai.name());
+                            nai.asyncChannel.sendMessage(
+                                    NetworkAgent.CMD_PREVENT_AUTOMATIC_RECONNECT);
+                            teardownUnneededNetwork(nai);
+                            break;
+                        }
                         updateCapabilities(oldScore, nai, nai.networkCapabilities);
                     }
                     if (!visible) {
@@ -2328,6 +2340,12 @@ public class ConnectivityService extends IConnectivityManager.Stub
                 }
             }
             return true;
+        }
+
+        private int getCaptivePortalMode() {
+            return Settings.Global.getInt(mContext.getContentResolver(),
+                    Settings.Global.CAPTIVE_PORTAL_MODE,
+                    Settings.Global.CAPTIVE_PORTAL_MODE_PROMPT);
         }
 
         private boolean maybeHandleNetworkAgentInfoMessage(Message msg) {
@@ -3207,7 +3225,8 @@ public class ConnectivityService extends IConnectivityManager.Stub
         enforceAccessPermission();
         enforceInternetPermission();
 
-        NetworkAgentInfo nai;
+        // TODO: execute this logic on ConnectivityService handler.
+        final NetworkAgentInfo nai;
         if (network == null) {
             nai = getDefaultNetwork();
         } else {
@@ -3218,21 +3237,24 @@ public class ConnectivityService extends IConnectivityManager.Stub
             return;
         }
         // Revalidate if the app report does not match our current validated state.
-        if (hasConnectivity == nai.lastValidated) return;
+        if (hasConnectivity == nai.lastValidated) {
+            return;
+        }
         final int uid = Binder.getCallingUid();
         if (DBG) {
             log("reportNetworkConnectivity(" + nai.network.netId + ", " + hasConnectivity +
                     ") by " + uid);
         }
-        synchronized (nai) {
-            // Validating a network that has not yet connected could result in a call to
-            // rematchNetworkAndRequests() which is not meant to work on such networks.
-            if (!nai.everConnected) return;
-
-            if (isNetworkWithLinkPropertiesBlocked(nai.linkProperties, uid, false)) return;
-
-            nai.networkMonitor.sendMessage(NetworkMonitor.CMD_FORCE_REEVALUATION, uid);
+        // Validating a network that has not yet connected could result in a call to
+        // rematchNetworkAndRequests() which is not meant to work on such networks.
+        if (!nai.everConnected) {
+            return;
         }
+        LinkProperties lp = getLinkProperties(nai);
+        if (isNetworkWithLinkPropertiesBlocked(lp, uid, false)) {
+            return;
+        }
+        nai.networkMonitor.sendMessage(NetworkMonitor.CMD_FORCE_REEVALUATION, uid);
     }
 
     private ProxyInfo getDefaultProxy() {

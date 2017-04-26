@@ -28,16 +28,17 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
-import android.content.res.Configuration;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.drawable.AnimatedVectorDrawable;
+import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
 import android.graphics.PixelFormat;
@@ -107,6 +108,7 @@ public class RecentController implements RecentPanelView.OnExitListener,
 
     public static float DEFAULT_SCALE_FACTOR = 1.0f;
 
+    private Configuration mConfiguration;
     private Context mContext;
     private WindowManager mWindowManager;
     private IWindowManager mWindowManagerService;
@@ -139,6 +141,8 @@ public class RecentController implements RecentPanelView.OnExitListener,
     ProgressBar mMemBar;
     boolean enableMemDisplay;
     private ActivityManager mAm;
+    private int mMembarcolor;
+    private int mMemtextcolor;
 
     private boolean mMemBarLongClickToClear;
 
@@ -193,6 +197,8 @@ public class RecentController implements RecentPanelView.OnExitListener,
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
         mContext.registerReceiver(mBroadcastReceiver, filter);
+        mConfiguration = new Configuration();
+        mConfiguration.updateFrom(context.getResources().getConfiguration());
 
         mParentView = new FrameLayout(mContext);
 
@@ -813,6 +819,12 @@ public class RecentController implements RecentPanelView.OnExitListener,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.RECENTS_MAX_APPS),
                     false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.SLIM_MEM_BAR_COLOR),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.SLIM_MEM_TEXT_COLOR),
+                    false, this, UserHandle.USER_ALL);
             update();
         }
 
@@ -905,6 +917,10 @@ public class RecentController implements RecentPanelView.OnExitListener,
 
             mMemBarLongClickToClear = Settings.System.getInt(resolver,
                     Settings.System.SLIM_RECENTS_MEM_DISPLAY_LONG_CLICK_CLEAR, 0) == 1;
+            mMembarcolor = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.SLIM_MEM_BAR_COLOR, 0x00ffffff);
+            mMemtextcolor = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.SLIM_MEM_TEXT_COLOR, 0x00ffffff);
 
             String currentIconPack = Settings.System.getString(resolver,
                 Settings.System.SLIM_RECENTS_ICON_PACK);
@@ -939,6 +955,15 @@ public class RecentController implements RecentPanelView.OnExitListener,
                         UserHandle.USER_CURRENT));
             }
         }
+    }
+
+    public boolean onConfigurationChanged(Configuration newConfig) {
+        if (mConfiguration.densityDpi != newConfig.densityDpi) {
+            hideRecents(true);
+            rebuildRecentsScreen();
+        }
+        mConfiguration.updateFrom(newConfig);
+        return true;
     }
 
     /**
@@ -1176,6 +1201,12 @@ public class RecentController implements RecentPanelView.OnExitListener,
             mMemText.setText(String.format(mContext.getResources().getString(R.string.recents_free_ram),available));
             mMemBar.setMax(max);
             mMemBar.setProgress(available);
+            mMemBar.getProgressDrawable().setColorFilter(mMembarcolor == 0x00ffffff
+                    ? mContext.getResources().getColor(R.color.system_accent_color)
+                    : mMembarcolor, Mode.MULTIPLY);
+            mMemText.setTextColor(mMemtextcolor == 0x00ffffff
+                    ? mContext.getResources().getColor(R.color.recents_membar_text_color)
+                    : mMemtextcolor);
     }
 
     public long getTotalMemory() {

@@ -134,6 +134,9 @@ public class BluetoothTile extends QSTile<QSTile.BooleanState>  {
         state.autoMirrorDrawable = false;
         state.minimalContentDescription =
                 mContext.getString(R.string.accessibility_quick_settings_bluetooth);
+        if (mController.getBluetoothState() == BluetoothAdapter.STATE_ON) {
+            fireToggleStateChanged(true);
+        }
         if (enabled) {
             state.label = null;
             if (connected) {
@@ -285,17 +288,20 @@ public class BluetoothTile extends QSTile<QSTile.BooleanState>  {
                     final Item item = new Item();
                     item.icon = R.drawable.ic_qs_bluetooth_on;
                     item.line1 = device.getName();
+                    item.tag = device;
                     int state = device.getMaxConnectionState();
                     if (state == BluetoothProfile.STATE_CONNECTED) {
                         item.icon = R.drawable.ic_qs_bluetooth_connected;
                         item.line2 = mContext.getString(R.string.quick_settings_connected);
                         item.canDisconnect = true;
+                        items.add(0, item);
                     } else if (state == BluetoothProfile.STATE_CONNECTING) {
                         item.icon = R.drawable.ic_qs_bluetooth_connecting;
                         item.line2 = mContext.getString(R.string.quick_settings_connecting);
+                        items.add(item);
+                    } else {
+                        items.add(item);
                     }
-                    item.tag = device;
-                    items.add(item);
                 }
             }
             mItems.setItems(items.toArray(new Item[items.size()]));
