@@ -122,7 +122,6 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
                         null, mEcaView, null
                 }};
 
-<<<<<<< HEAD
         boolean scramblePin = (CMSettings.System.getInt(getContext().getContentResolver(),
                 CMSettings.System.LOCKSCREEN_PIN_SCRAMBLE_LAYOUT, 0) == 1);
 
@@ -142,14 +141,16 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
                     }
                 }
             }
+		
 
             // reset the digits in the views
             for (int i = 0; i < sNumbers.size(); i++) {
                 NumPadKey view = views.get(i);
                 view.setDigit(sNumbers.get(i));
             }
-=======
-        boolean quickUnlock = (Settings.System.getInt(getContext().getContentResolver(),
+		}
+
+		boolean quickUnlock = (Settings.System.getInt(getContext().getContentResolver(),
                 Settings.System.LOCKSCREEN_QUICK_UNLOCK_CONTROL, 0) == 1);
      
         if (quickUnlock) {
@@ -160,7 +161,6 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
             });
         } else {
             mPasswordEntry.setQuickUnlockListener(null);
->>>>>>> dd89d68... Keyguard: Forward port lockscreen quick unlock (1/2)
         }
     }
 
