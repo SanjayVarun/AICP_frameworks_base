@@ -42,9 +42,9 @@ import android.widget.Toast;
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.internal.util.aicp.AicpUtils;
+import com.android.internal.util.aicp.OmniJawsClient;
 import com.android.systemui.R;
 import com.android.systemui.omni.DetailedWeatherView;
-import com.android.systemui.omni.OmniJawsClient;
 import com.android.systemui.qs.QSDetailItems;
 import com.android.systemui.qs.QSDetailItems.Item;
 import com.android.systemui.qs.QSDetailItemsList;
@@ -109,6 +109,15 @@ public class WeatherTile extends QSTile<QSTile.BooleanState> implements OmniJaws
     public void weatherUpdated() {
         if (DEBUG) Log.d(TAG, "weatherUpdated");
         queryAndUpdateWeather();
+    }
+
+    @Override
+    public void weatherError(int errorReason) {
+        mWeatherLabel = mContext.getResources().getString(R.string.omnijaws_service_error);
+        refreshState();
+        if (mDetailedView != null) {
+            mDetailedView.weatherError(errorReason);
+        }
     }
 
     @Override

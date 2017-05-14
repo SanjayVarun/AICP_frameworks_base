@@ -3861,6 +3861,12 @@ public final class Settings {
         public static final String BRIGHTNESS_ICON = "brightness_icon";
 
         /**
+         * Brightness Icon position on Brightness Slider
+         * @hide
+         */
+        public static final String BRIGHTNESS_ICON_POSITION = "brightness_icon_position";
+
+        /**
          * Change quick settings tiles animation style
          *
          * @hide
@@ -4153,6 +4159,12 @@ public final class Settings {
 
         /**
          * Whether or not to launch default music player when headset is connected
+         * 0 = don't do anything (default)
+         * 1 = launch only on wired connection
+         * 2 = launch only on bt connection but no carkit
+         * 3 = launch only on bt connection
+         * 4 = launch on both connection types but no carkit
+         * 5 = launch on both connection types
          * @hide
          */
         public static final String HEADSET_CONNECT_PLAYER = "headset_connect_player";
@@ -4232,6 +4244,19 @@ public final class Settings {
          * @hide
          */
         public static final String BATTERY_LIGHT_REALLY_FULL_COLOR = "battery_light_really_full_color";
+
+        /**
+         * Whether to blend battery light colors between full and low value
+         * @hide
+         */
+        public static final String BATTERY_LIGHT_BLEND_COLOR = "battery_light_blend_color";
+
+        /**
+         * Whether to reverse the blend direction of battery light colors between full and low value
+         * (HSV color model)
+         * @hide
+         */
+        public static final String BATTERY_LIGHT_BLEND_COLOR_REVERSE = "battery_light_blend_color_reverse";
 
         /**
          * Status bar carrier label
@@ -4897,6 +4922,21 @@ public final class Settings {
          */
         public static final String RECENT_PANEL_EXPANDED_MODE = "recent_panel_expanded_mode";
 
+
+        /**
+         * Whether to show or hide Weather panel in expanded header
+         * @hide
+         */
+        public static final String HEADER_WEATHER_ENABLED = "header_weather_enabled";
+
+
+        /**
+         * Whether to show or hide Weather panel image in expanded header
+         * @hide
+         */
+        public static final String HEADER_WEATHER_IMAGE_ENABLED = "header_weather_image_enabled";
+
+
         /**
          * Recent panel: Show topmost task
          *
@@ -5252,6 +5292,36 @@ public final class Settings {
          * @hide
          */
         public static final String HOME_RESIZE_DURATION = "home_resize_anim_duration";
+
+        /**
+         * Whether to show the weather info on the lock screen
+         * @hide
+         */
+        public static final String LOCK_SCREEN_SHOW_WEATHER = "lock_screen_show_weather";
+
+        /**
+         * Whether to show the weather location on lock screen
+         * @hide
+         */
+        public static final String LOCK_SCREEN_SHOW_WEATHER_LOCATION = "lock_screen_show_weather_location";
+
+        /**
+         * Whether to show the weather condition icon on lock screen
+         * @hide
+         */
+        public static final String LOCK_SCREEN_WEATHER_CONDITION_ICON = "lock_screen_weather_condition_icon";
+
+        /**
+         * Whether to show QS footer warnings
+         * @hide
+         */
+        public static final String QS_FOOTER_WARNINGS = "qs_footer_warnings";
+
+        /**
+         * Whether to show the weather wind speed in km/h or m/s
+         * @hide
+         */
+        public static final String OMNIJAWS_WINDSPEED_M_S = "omnijaws_windspeed_m_s";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings

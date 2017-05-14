@@ -27,9 +27,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.android.internal.util.aicp.OmniJawsClient;
+
 import com.android.systemui.R;
 import com.android.systemui.omni.DetailedWeatherView;
-import com.android.systemui.omni.OmniJawsClient;
 
 public class StatusBarWeatherImage extends ImageView implements
         OmniJawsClient.OmniJawsObserver {
@@ -121,6 +122,13 @@ public class StatusBarWeatherImage extends ImageView implements
             mWeatherClient.setOmniJawsEnabled(true);
             queryAndUpdateWeather();
         } else {
+            setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void weatherError(int errorReason) {
+        if (mWeatherData != null) {
             setVisibility(View.GONE);
         }
     }
